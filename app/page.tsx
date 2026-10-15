@@ -4,6 +4,9 @@ import { cookies } from "next/headers";
 import { createClient } from "@/utils/supabase/server";
 
 async function Account() {
+  if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY) {
+    return <p>Sign-in is off: Supabase keys are missing from .env.local.</p>;
+  }
   const supabase = createClient(await cookies());
   const {
     data: { user },

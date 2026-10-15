@@ -9,7 +9,10 @@ const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
 export const updateSession = async (request: NextRequest) => {
   let supabaseResponse = NextResponse.next({ request });
 
-  const supabase = createServerClient(supabaseUrl!, supabaseKey!, {
+  // Without keys (missing .env.local), skip auth so non-Supabase pages still work.
+  if (!supabaseUrl || !supabaseKey) return supabaseResponse;
+
+  const supabase = createServerClient(supabaseUrl, supabaseKey, {
     cookies: {
       getAll() {
         return request.cookies.getAll();
