@@ -1,0 +1,3 @@
+# Lets pnpm run this package's install script (eslint's resolver) instead of failing with ERR_PNPM_IGNORED_BUILDS.
+allowBuilds:
+  unrs-resolver: true
