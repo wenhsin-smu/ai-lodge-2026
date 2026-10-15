@@ -83,31 +83,73 @@ export function getServerPosts() {
 }
 
 /**
- * Test identity for this browser tab, until real accounts are wired up.
+ * Test identities for this browser tab, until real accounts are wired up.
  * sessionStorage is per tab, so two tabs act as two friends sharing one feed.
+ * A tab can also flip to "view as friend" to see its own posts the way a
+ * friend would: covered, ready to scratch.
  */
-let identity: Identity | null = null;
-export function getIdentity(): Identity {
-  if (identity) return identity;
+const VIEW_AS_FRIEND_KEY = "studybooth.viewAsFriend";
+let self: Identity | null = null;
+let friend: Identity | null = null;
+let viewAsFriend = false;
+const identityListeners = new Set<() => void>();
+
+function loadIdentities() {
+  if (self) return;
   try {
     const saved = window.sessionStorage.getItem(IDENTITY_KEY);
-    if (saved) return (identity = JSON.parse(saved));
+    if (saved) self = JSON.parse(saved);
+    viewAsFriend = window.sessionStorage.getItem(VIEW_AS_FRIEND_KEY) === "1";
   } catch {}
-  identity = { id: crypto.randomUUID(), name: NAMES[Math.floor(Math.random() * NAMES.length)] };
-  try {
-    window.sessionStorage.setItem(IDENTITY_KEY, JSON.stringify(identity));
-  } catch {}
-  return identity;
+  if (!self) {
+    self = { id: crypto.randomUUID(), name: NAMES[Math.floor(Math.random() * NAMES.length)] };
+    try {
+      window.sessionStorage.setItem(IDENTITY_KEY, JSON.stringify(self));
+    } catch {}
+  }
+  const friendName = NAMES[(NAMES.indexOf(self.name) + 1) % NAMES.length];
+  friend = { id: `${self.id}:friend`, name: friendName };
 }
 
-/** Friends' posts stay covered until this viewer scratches them; your own never are. */
-export function isCoveredFor(post: LocalPost, viewer: Identity) {
-  return post.authorId !== viewer.id && !post.revealedBy.includes(viewer.id);
+/** Who is looking at the feed right now in this tab. */
+export function getIdentity(): Identity {
+  loadIdentities();
+  return viewAsFriend ? friend! : self!;
+}
+
+export function getSelf(): Identity {
+  loadIdentities();
+  return self!;
+}
+
+export function isViewingAsFriend() {
+  loadIdentities();
+  return viewAsFriend;
+}
+
+export function subscribeIdentity(listener: () => void) {
+  identityListeners.add(listener);
+  return () => identityListeners.delete(listener);
+}
+
+export function setViewAsFriend(on: boolean) {
+  loadIdentities();
+  if (on) {
+    // Fresh covers every time, so the reveal can be shown again and again.
+    load();
+    const friendId = friend!.id;
+    save(posts.map((p) => ({ ...p, revealedBy: p.revealedBy.filter((id) => id !== friendId) })));
+  }
+  viewAsFriend = on;
+  try {
+    window.sessionStorage.setItem(VIEW_AS_FRIEND_KEY, on ? "1" : "0");
+  } catch {}
+  identityListeners.forEach((l) => l());
 }
 
 export function addPost(post: Omit<LocalPost, "id" | "createdAt" | "authorId" | "author" | "revealedBy">) {
   load();
-  const me = getIdentity();
+  const me = getSelf();
   save([
     { ...post, id: crypto.randomUUID(), createdAt: Date.now(), authorId: me.id, author: me.name, revealedBy: [] },
     ...posts,
@@ -121,39 +163,4 @@ export function markRevealed(id: string) {
 
 export function clearPosts() {
   save(EMPTY);
-}
-
-// Dev helper: fakes a post from a friend so scratch-to-reveal can be tested alone.
-export function addSampleFriendPost() {
-  load();
-  const canvas = document.createElement("canvas");
-  canvas.width = 640;
-  canvas.height = 480;
-  const ctx = canvas.getContext("2d")!;
-  const hue = Math.floor(Math.random() * 360);
-  const g = ctx.createLinearGradient(0, 0, 640, 480);
-  g.addColorStop(0, `hsl(${hue} 60% 75%)`);
-  g.addColorStop(1, `hsl(${(hue + 60) % 360} 60% 55%)`);
-  ctx.fillStyle = g;
-  ctx.fillRect(0, 0, 640, 480);
-  const notes = ["chapter 4 done!", "coffee #2", "you got this", "library gang", "1 more hour"];
-  ctx.fillStyle = "white";
-  ctx.font = "bold 56px 'Comic Sans MS', cursive";
-  ctx.textAlign = "center";
-  ctx.textBaseline = "middle";
-  ctx.fillText(notes[Math.floor(Math.random() * notes.length)], 320, 240);
-  const author = NAMES[Math.floor(Math.random() * NAMES.length)];
-  save([
-    {
-      id: crypto.randomUUID(),
-      createdAt: Date.now(),
-      authorId: `simulated-${author}`,
-      author,
-      kind: "photo",
-      image: canvas.toDataURL("image/jpeg", 0.85),
-      caption: "",
-      revealedBy: [],
-    },
-    ...posts,
-  ]);
 }

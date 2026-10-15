@@ -1,21 +1,23 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { getIdentity, isCoveredFor, markRevealed, type LocalPost } from "@/lib/localPosts";
+import { markRevealed, type LocalPost } from "@/lib/localPosts";
 
 const CW = 320;
 const CH = 240;
 const REVEAL_AT = 0.6;
 
-export default function ScratchCard({ post, eraserSize }: { post: LocalPost; eraserSize: number }) {
+type Props = { post: LocalPost; viewerId: string; eraserSize: number };
+
+export default function ScratchCard({ post, viewerId, eraserSize }: Props) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const last = useRef<{ x: number; y: number } | null>(null);
   const moves = useRef(0);
   const [fading, setFading] = useState(false);
 
-  const me = getIdentity();
-  const covered = isCoveredFor(post, me);
-  const mine = post.authorId === me.id;
+  // Friends' posts stay covered until this viewer scratches them; your own never are.
+  const mine = post.authorId === viewerId;
+  const covered = !mine && !post.revealedBy.includes(viewerId);
 
   useEffect(() => {
     if (!covered) return;

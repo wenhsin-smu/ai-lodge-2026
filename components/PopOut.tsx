@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import ScratchCard from "@/components/ScratchCard";
+import { useIdentity } from "@/components/useIdentity";
 import { useLocalPosts } from "@/components/useLocalPosts";
 
 const LATEST = 3;
@@ -77,6 +78,7 @@ export default function PopOut({ eraserSize }: { eraserSize: number }) {
 
 function Widget({ eraserSize }: { eraserSize: number }) {
   const posts = useLocalPosts().slice(0, LATEST);
+  const viewer = useIdentity();
 
   return (
     <div className="window" style={{ maxWidth: "none" }}>
@@ -92,10 +94,12 @@ function Widget({ eraserSize }: { eraserSize: number }) {
         >
           New post
         </button>
-        {posts.length === 0 ? (
+        {!viewer ? null : posts.length === 0 ? (
           <p>Quiet for now. Posts from your group will show up here.</p>
         ) : (
-          posts.map((p) => <ScratchCard key={p.id} post={p} eraserSize={eraserSize} />)
+          posts.map((p) => (
+            <ScratchCard key={`${p.id}-${viewer.id}`} post={p} viewerId={viewer.id} eraserSize={eraserSize} />
+          ))
         )}
       </div>
     </div>
