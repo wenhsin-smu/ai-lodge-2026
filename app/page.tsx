@@ -1,6 +1,7 @@
 import { Suspense } from "react";
 import Link from "next/link";
 import { cookies } from "next/headers";
+import { connection } from "next/server";
 import { hasSupabaseEnv } from "@/utils/supabase/env";
 import { createClient } from "@/utils/supabase/server";
 
@@ -15,6 +16,9 @@ async function Account() {
       </>
     );
   }
+  // Render at request time: Supabase reads the clock to check session expiry,
+  // which Next.js doesn't allow during prerendering.
+  await connection();
   const supabase = createClient(await cookies());
   const {
     data: { user },
