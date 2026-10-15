@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { markRevealed, type LocalPost } from "@/lib/localPosts";
+import { getIdentity, isCoveredFor, markRevealed, type LocalPost } from "@/lib/localPosts";
 
 const CW = 320;
 const CH = 240;
@@ -13,12 +13,14 @@ export default function ScratchCard({ post, eraserSize }: { post: LocalPost; era
   const moves = useRef(0);
   const [fading, setFading] = useState(false);
 
-  const covered = !post.revealed;
+  const me = getIdentity();
+  const covered = isCoveredFor(post, me);
+  const mine = post.authorId === me.id;
 
   useEffect(() => {
     if (!covered) return;
-    drawFoil(canvasRef.current!.getContext("2d")!, post.fromMe ? "Your post" : `From ${post.author}`, post.id);
-  }, [covered, post.author, post.fromMe, post.id]);
+    drawFoil(canvasRef.current!.getContext("2d")!, `From ${post.author}`, post.id);
+  }, [covered, post.author, post.id]);
 
   function point(e: React.PointerEvent<HTMLCanvasElement>) {
     const rect = e.currentTarget.getBoundingClientRect();
@@ -99,7 +101,7 @@ export default function ScratchCard({ post, eraserSize }: { post: LocalPost; era
         )}
       </div>
       <figcaption style={{ marginTop: 4 }}>
-        <b>{post.author}</b>
+        <b>{mine ? "You" : post.author}</b>
         {post.caption && (covered ? "" : `: ${post.caption}`)}
       </figcaption>
     </figure>

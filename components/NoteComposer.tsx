@@ -93,17 +93,14 @@ export default function NoteComposer() {
 
   function send() {
     addPost({
-      author: "You",
-      fromMe: true,
       kind: "note",
       image,
       caption: "",
       noteText: text.trim(),
-      revealed: false, // arrives covered, scratch to reveal like any post
     });
     setText("");
     setPhase("edit");
-    setSentNote("Sent!");
+    setSentNote("Sent! Your friends will scratch to reveal it.");
   }
 
   return (

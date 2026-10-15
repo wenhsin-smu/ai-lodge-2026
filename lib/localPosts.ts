@@ -3,17 +3,22 @@
 
 export type LocalPost = {
   id: string;
+  authorId: string;
   author: string;
-  fromMe: boolean;
   kind: "fog" | "photo" | "note";
   image: string; // data URL
   caption: string;
   noteText?: string; // typed text of a stitched note (for moderation later)
   createdAt: number;
-  revealed: boolean;
+  /** Viewers who have scratched this post open. */
+  revealedBy: string[];
 };
 
-const STORAGE_KEY = "studybooth.posts.v1";
+export type Identity = { id: string; name: string };
+
+const STORAGE_KEY = "studybooth.posts.v2";
+const IDENTITY_KEY = "studybooth.identity";
+const NAMES = ["Mina", "Jo", "Sam", "Ari", "Kai", "Noor", "Lou", "Tae"];
 const MAX_POSTS = 12;
 const DAY_MS = 24 * 60 * 60 * 1000;
 const EMPTY: LocalPost[] = [];
@@ -77,13 +82,41 @@ export function getServerPosts() {
   return EMPTY;
 }
 
-export function addPost(post: Omit<LocalPost, "id" | "createdAt">) {
+/**
+ * Test identity for this browser tab, until real accounts are wired up.
+ * sessionStorage is per tab, so two tabs act as two friends sharing one feed.
+ */
+let identity: Identity | null = null;
+export function getIdentity(): Identity {
+  if (identity) return identity;
+  try {
+    const saved = window.sessionStorage.getItem(IDENTITY_KEY);
+    if (saved) return (identity = JSON.parse(saved));
+  } catch {}
+  identity = { id: crypto.randomUUID(), name: NAMES[Math.floor(Math.random() * NAMES.length)] };
+  try {
+    window.sessionStorage.setItem(IDENTITY_KEY, JSON.stringify(identity));
+  } catch {}
+  return identity;
+}
+
+/** Friends' posts stay covered until this viewer scratches them; your own never are. */
+export function isCoveredFor(post: LocalPost, viewer: Identity) {
+  return post.authorId !== viewer.id && !post.revealedBy.includes(viewer.id);
+}
+
+export function addPost(post: Omit<LocalPost, "id" | "createdAt" | "authorId" | "author" | "revealedBy">) {
   load();
-  save([{ ...post, id: crypto.randomUUID(), createdAt: Date.now() }, ...posts]);
+  const me = getIdentity();
+  save([
+    { ...post, id: crypto.randomUUID(), createdAt: Date.now(), authorId: me.id, author: me.name, revealedBy: [] },
+    ...posts,
+  ]);
 }
 
 export function markRevealed(id: string) {
-  save(posts.map((p) => (p.id === id ? { ...p, revealed: true } : p)));
+  const me = getIdentity();
+  save(posts.map((p) => (p.id === id && !p.revealedBy.includes(me.id) ? { ...p, revealedBy: [...p.revealedBy, me.id] } : p)));
 }
 
 export function clearPosts() {
@@ -92,6 +125,7 @@ export function clearPosts() {
 
 // Dev helper: fakes a post from a friend so scratch-to-reveal can be tested alone.
 export function addSampleFriendPost() {
+  load();
   const canvas = document.createElement("canvas");
   canvas.width = 640;
   canvas.height = 480;
@@ -108,13 +142,18 @@ export function addSampleFriendPost() {
   ctx.textAlign = "center";
   ctx.textBaseline = "middle";
   ctx.fillText(notes[Math.floor(Math.random() * notes.length)], 320, 240);
-  const names = ["Mina", "Jo", "Sam", "Ari"];
-  addPost({
-    author: names[Math.floor(Math.random() * names.length)],
-    fromMe: false,
-    kind: "photo",
-    image: canvas.toDataURL("image/jpeg", 0.85),
-    caption: "",
-    revealed: false,
-  });
+  const author = NAMES[Math.floor(Math.random() * NAMES.length)];
+  save([
+    {
+      id: crypto.randomUUID(),
+      createdAt: Date.now(),
+      authorId: `simulated-${author}`,
+      author,
+      kind: "photo",
+      image: canvas.toDataURL("image/jpeg", 0.85),
+      caption: "",
+      revealedBy: [],
+    },
+    ...posts,
+  ]);
 }

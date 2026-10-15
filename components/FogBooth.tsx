@@ -287,16 +287,13 @@ export default function FogBooth() {
   function send() {
     if (!preview) return;
     addPost({
-      author: "You",
-      fromMe: true,
       kind: preview.kind,
       image: preview.image,
       caption: caption.trim(),
-      revealed: false, // arrives covered, scratch to reveal like any post
     });
     setPreview(null);
     clearFog();
-    setSentNote("Sent!");
+    setSentNote("Sent! Your friends will scratch to reveal it.");
   }
 
   return (
