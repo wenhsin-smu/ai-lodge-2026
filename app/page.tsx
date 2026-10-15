@@ -37,6 +37,9 @@ export default function Home() {
       </div>
       <div className="window-body stack">
         <p>Study apart, together.</p>
+        <Link href="/booth">
+          <button>Open the booth (test mode)</button>
+        </Link>
         <Suspense fallback={<p>Loading...</p>}>
           <Account />
         </Suspense>

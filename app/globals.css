@@ -25,3 +25,23 @@ body {
   flex-direction: column;
   gap: 8px;
 }
+
+.booth-layout {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  align-items: flex-start;
+  justify-content: center;
+}
+
+.booth-layout > .window:first-child {
+  max-width: 680px;
+}
+
+/* Floating Document PiP widget: calm, plain background. */
+body.pip {
+  display: block;
+  min-height: 0;
+  padding: 0;
+  background: #c0c0c0;
+}
