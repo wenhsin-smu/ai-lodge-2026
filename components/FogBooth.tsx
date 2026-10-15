@@ -292,7 +292,7 @@ export default function FogBooth() {
       kind: preview.kind,
       image: preview.image,
       caption: caption.trim(),
-      revealed: true,
+      revealed: false, // arrives covered, scratch to reveal like any post
     });
     setPreview(null);
     clearFog();

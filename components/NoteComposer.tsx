@@ -99,7 +99,7 @@ export default function NoteComposer() {
       image,
       caption: "",
       noteText: text.trim(),
-      revealed: true,
+      revealed: false, // arrives covered, scratch to reveal like any post
     });
     setText("");
     setPhase("edit");
