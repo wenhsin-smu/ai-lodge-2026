@@ -5,9 +5,10 @@ export type LocalPost = {
   id: string;
   author: string;
   fromMe: boolean;
-  kind: "fog" | "photo";
+  kind: "fog" | "photo" | "note";
   image: string; // data URL
   caption: string;
+  noteText?: string; // typed text of a stitched note (for moderation later)
   createdAt: number;
   revealed: boolean;
 };

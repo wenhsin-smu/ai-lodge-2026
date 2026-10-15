@@ -3,19 +3,27 @@
 import { useState } from "react";
 import Feed from "@/components/Feed";
 import FogBooth from "@/components/FogBooth";
+import NoteComposer from "@/components/NoteComposer";
 import PopOut from "@/components/PopOut";
 
 export default function BoothPage() {
   const [eraserSize, setEraserSize] = useState(28);
+  const [tab, setTab] = useState<"camera" | "note">("camera");
 
   return (
     <div className="booth-layout">
       <div className="window">
         <div className="title-bar">
-          <div className="title-bar-text">Fog camera</div>
+          <div className="title-bar-text">New post</div>
         </div>
         <div className="window-body">
-          <FogBooth />
+          <menu role="tablist">
+            <Tab label="Fog camera" selected={tab === "camera"} onSelect={() => setTab("camera")} />
+            <Tab label="Stitched note" selected={tab === "note"} onSelect={() => setTab("note")} />
+          </menu>
+          <div className="window" role="tabpanel">
+            <div className="window-body">{tab === "camera" ? <FogBooth /> : <NoteComposer />}</div>
+          </div>
         </div>
       </div>
 
@@ -42,5 +50,21 @@ export default function BoothPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+function Tab({ label, selected, onSelect }: { label: string; selected: boolean; onSelect: () => void }) {
+  return (
+    <li role="tab" aria-selected={selected}>
+      <a
+        href="#"
+        onClick={(e) => {
+          e.preventDefault();
+          onSelect();
+        }}
+      >
+        {label}
+      </a>
+    </li>
   );
 }

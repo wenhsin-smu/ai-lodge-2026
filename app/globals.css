@@ -39,6 +39,10 @@ body {
   max-width: 680px;
 }
 
+.window[role="tabpanel"] {
+  max-width: none;
+}
+
 /* Floating Document PiP widget: calm, plain background. */
 body.pip {
   display: block;

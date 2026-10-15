@@ -37,7 +37,7 @@ A small always-on-top widget sits in the corner of the laptop. You fog up your w
 - `profiles` (id = auth user id, display_name, created_at)
 - `groups` (id, name, invite_code unique, last_checkin_at, created_at)
 - `group_members` (group_id, user_id, joined_at) — PK (group_id, user_id)
-- `posts` (id, group_id, user_id, kind: 'fog' | 'photo', image_path, caption, status: 'pending' | 'approved' | 'held', created_at)
+- `posts` (id, group_id, user_id, kind: 'fog' | 'photo' | 'note', image_path, caption, status: 'pending' | 'approved' | 'held', created_at)
 - `study_sessions` (id, user_id, group_id, started_at, ended_at) — feeds caption context, check-ins and weekly story
 - `checkins` (id, group_id, message, created_at)
 - `reports` (id, post_id, reporter_id, reason, created_at)
