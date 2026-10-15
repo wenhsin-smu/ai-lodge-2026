@@ -6,7 +6,14 @@ import { createClient } from "@/utils/supabase/server";
 
 async function Account() {
   if (!hasSupabaseEnv) {
-    return <p>Sign-in is off: Supabase keys are missing from .env.local.</p>;
+    return (
+      <>
+        <p>Sign-in is off: Supabase keys are missing from .env.local.</p>
+        <Link href="/booth">
+          <button>Open camera</button>
+        </Link>
+      </>
+    );
   }
   const supabase = createClient(await cookies());
   const {
@@ -26,6 +33,9 @@ async function Account() {
       <p>
         Signed in as <b>{user.email}</b>
       </p>
+      <Link href="/booth">
+        <button>Open camera</button>
+      </Link>
       <form action="/auth/signout" method="post">
         <button type="submit">Sign out</button>
       </form>
@@ -41,9 +51,6 @@ export default function Home() {
       </div>
       <div className="window-body stack">
         <p>Study apart, together.</p>
-        <Link href="/booth">
-          <button>Open the booth (test mode)</button>
-        </Link>
         <Suspense fallback={<p>Loading...</p>}>
           <Account />
         </Suspense>

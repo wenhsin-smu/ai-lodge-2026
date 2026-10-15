@@ -36,6 +36,7 @@ export default function FogBooth() {
   const fogUsedRef = useRef(false);
 
   const [running, setRunning] = useState(false);
+  const [starting, setStarting] = useState(false);
   const [error, setError] = useState("");
   const [threshold, setThreshold] = useState(0.55);
   const [mode, setMode] = useState<Mode>("mouse");
@@ -64,6 +65,7 @@ export default function FogBooth() {
 
   async function start() {
     setError("");
+    setStarting(true);
     try {
       const stream = await navigator.mediaDevices.getUserMedia({
         video: { width: W, height: H, facingMode: "user" },
@@ -90,8 +92,14 @@ export default function FogBooth() {
       setError(
         e instanceof Error && e.name === "NotAllowedError"
           ? "Camera or microphone permission was denied. Allow both in the browser's address bar and try again."
-          : "Couldn't start the camera and microphone.",
+          : e instanceof Error && e.name === "NotFoundError"
+            ? "No camera or microphone was found on this computer."
+            : e instanceof Error && e.name === "NotReadableError"
+              ? "The camera is busy. Close other apps using it (Zoom, Teams, another tab) and try again."
+              : "Couldn't start the camera and microphone.",
       );
+    } finally {
+      setStarting(false);
     }
   }
 
@@ -293,14 +301,6 @@ export default function FogBooth() {
 
   return (
     <div className="stack" id="booth">
-      {!running && (
-        <div className="stack">
-          <p>Fog mode uses your camera and microphone. Nothing is recorded until you press Take photo.</p>
-          <button onClick={start}>Start camera</button>
-          {error && <p role="alert">{error}</p>}
-        </div>
-      )}
-
       {/* Kept invisible but rendered so the browser keeps decoding frames. */}
       <video
         ref={videoRef}
@@ -309,17 +309,42 @@ export default function FogBooth() {
         style={{ position: "absolute", width: 1, height: 1, opacity: 0, pointerEvents: "none" }}
       />
 
-      <div style={{ position: "relative", display: running && !preview ? "block" : "none" }}>
+      {/* Viewfinder: always visible (except during preview) so it's clear where the camera goes. */}
+      <div className="viewfinder" style={{ display: preview ? "none" : "block" }}>
         <canvas
           ref={canvasRef}
           width={W}
           height={H}
-          style={{ width: "100%", display: "block", cursor: mode === "mouse" ? "crosshair" : "default", touchAction: "none" }}
+          style={{
+            display: running ? "block" : "none",
+            cursor: mode === "mouse" ? "crosshair" : "default",
+          }}
           onPointerDown={onPointerDown}
           onPointerMove={onPointerMove}
           onPointerUp={onPointerUp}
           onPointerCancel={onPointerUp}
         />
+        {!running && (
+          <div className="viewfinder-empty">
+            <p>Your camera will appear here.</p>
+            <button onClick={start} disabled={starting}>
+              {starting ? "Waiting for permission..." : "Turn on camera"}
+            </button>
+            <p className="viewfinder-hint">
+              The browser will ask to use your camera and microphone (for blowing fog). Nothing is saved until you
+              press Take photo.
+            </p>
+            {error && (
+              <p role="alert" className="viewfinder-error">
+                {error}
+              </p>
+            )}
+          </div>
+        )}
+        <span className="viewfinder-corner tl" />
+        <span className="viewfinder-corner tr" />
+        <span className="viewfinder-corner bl" />
+        <span className="viewfinder-corner br" />
         <div
           ref={cursorRef}
           style={{
