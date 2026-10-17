@@ -45,12 +45,15 @@ export class AiError extends Error {
 
 type Effort = "low" | "medium" | "high";
 
-// Some Anthropic-compatible providers don't support structured outputs / effort.
-// After the first rejection we use plain requests (JSON instructions + zod) for this server process.
+// Some models/providers don't support the effort setting or structured outputs.
+// After the first rejection we stop sending that feature for this server process.
+let effortSupported = true;
 let plainMode = false;
 
 export function aiMode() {
-  return plainMode ? "plain JSON (provider rejected structured outputs)" : "structured outputs";
+  const parts = [plainMode ? "plain JSON (provider rejected structured outputs)" : "structured outputs"];
+  if (!effortSupported) parts.push("no effort setting (model doesn't support it)");
+  return parts.join(", ");
 }
 
 export async function askJson<T extends z.ZodType>(opts: {
@@ -67,13 +70,16 @@ export async function askJson<T extends z.ZodType>(opts: {
   const signal = AbortSignal.timeout(opts.timeoutMs);
   const maxTokens = opts.maxTokens ?? 4000;
 
-  if (!plainMode) {
+  while (!plainMode) {
     const structured = {
       model: cfg.model,
       max_tokens: maxTokens,
       system: opts.system,
       messages: [{ role: "user" as const, content: opts.content }],
-      output_config: { effort: opts.effort ?? "low", format: betaZodOutputFormat(opts.schema) },
+      output_config: {
+        ...(effortSupported ? { effort: opts.effort ?? "low" } : {}),
+        format: betaZodOutputFormat(opts.schema),
+      },
     };
     try {
       const response = cfg.fallbackModels.length
@@ -96,6 +102,11 @@ export async function askJson<T extends z.ZodType>(opts: {
       checkStop(response.stop_reason, "structured");
       return opts.schema.parse(response.parsed_output);
     } catch (e) {
+      if (effortSupported && isUnsupported(e, /effort/i)) {
+        console.warn("[ai] model doesn't support the effort setting; retrying without it", errorDetail(e));
+        effortSupported = false;
+        continue;
+      }
       if (!isUnsupported(e)) throw wrap(e, "structured");
       console.warn("[ai] provider rejected structured outputs; switching to plain JSON requests", errorDetail(e));
       plainMode = true;
@@ -125,13 +136,16 @@ export async function askJson<T extends z.ZodType>(opts: {
   }
 }
 
-/** True when a 4xx means "this provider/model doesn't support that request feature". */
-function isUnsupported(e: unknown, pattern = /output_config|format|effort|structured|json_schema|beta|fallback|extra|unknown|not support|unsupported/i) {
-  return (
-    (e instanceof Anthropic.BadRequestError || e instanceof Anthropic.UnprocessableEntityError || e instanceof Anthropic.NotFoundError) &&
-    pattern.test(`${e.message} ${JSON.stringify(e.error ?? "")}`) &&
-    !/model/i.test(e instanceof Anthropic.NotFoundError ? e.message : "")
-  );
+/**
+ * True when the provider says a request feature isn't supported. Judged by the
+ * error message on any 4xx, because some proxies report it with odd status codes
+ * (apiyi sends 429 for "This model does not support the effort parameter").
+ */
+function isUnsupported(e: unknown, feature = /output_config|output_format|format|effort|structured|json_schema|beta|fallback/i) {
+  if (!(e instanceof Anthropic.APIError) || !e.status || e.status < 400 || e.status >= 500) return false;
+  const text = `${e.message} ${JSON.stringify(e.error ?? "")}`;
+  const saysUnsupported = /not support|unsupported|extra inputs|not permitted|unknown (parameter|field)|unrecognized|invalid (parameter|field)/i;
+  return saysUnsupported.test(text) && feature.test(text);
 }
 
 function checkStop(stop: string | null, attempt: string) {
@@ -186,14 +200,20 @@ export function describeAiError(e: unknown): string {
   if (e instanceof Anthropic.AuthenticationError) return "the AI key (ANTHROPIC_API_KEY) was rejected";
   if (e instanceof Anthropic.PermissionDeniedError) return `this AI key isn't allowed to use "${model}"`;
   if (e instanceof Anthropic.NotFoundError) return `"${model}" wasn't found at this AI provider (check ANTHROPIC_MODEL and ANTHROPIC_BASE_URL)`;
-  if (e instanceof Anthropic.RateLimitError) return "the AI is rate-limited or out of credits";
+  if (e instanceof Anthropic.RateLimitError) return `the AI provider returned 429: ${providerMessage(e)}`;
   if (e instanceof Anthropic.BadRequestError) return `the AI request was rejected: ${e.message.slice(0, 200)}`;
   if (e instanceof Anthropic.APIUserAbortError || e instanceof Anthropic.APIConnectionTimeoutError) return "the AI took too long";
   if (e instanceof Anthropic.APIConnectionError) return "couldn't reach the AI service (check ANTHROPIC_BASE_URL)";
-  if (e instanceof Anthropic.APIError) return `AI service error ${e.status ?? ""}: ${e.message.slice(0, 160)}`.trim();
+  if (e instanceof Anthropic.APIError) return `AI service error ${e.status ?? ""}: ${providerMessage(e)}`.trim();
   if (e instanceof z.ZodError) return "the AI's answer wasn't in the expected format";
   if (e instanceof Error) return e.message.slice(0, 200);
   return "unknown error";
+}
+
+/** The provider's own error message, if it sent one. */
+function providerMessage(e: InstanceType<typeof Anthropic.APIError>) {
+  const body = e.error as { error?: { message?: string }; message?: string } | undefined;
+  return (body?.error?.message ?? body?.message ?? e.message).slice(0, 200);
 }
 
 /** Full error details for logs and the AI check endpoint. */
