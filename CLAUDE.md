@@ -37,10 +37,14 @@ A small always-on-top widget sits in the corner of the laptop. You fog up your w
 - `profiles` (id = auth user id, display_name, created_at)
 - `groups` (id, name, invite_code unique, last_checkin_at, created_at)
 - `group_members` (group_id, user_id, joined_at) — PK (group_id, user_id)
-- `posts` (id, group_id, user_id, kind: 'fog' | 'photo' | 'note', image_path, caption, status: 'pending' | 'approved' | 'held', created_at)
-- `study_sessions` (id, user_id, group_id, started_at, ended_at) — feeds caption context, check-ins and weekly story
+- `posts` (id, group_id, user_id, kind: 'fog' | 'photo' | 'note', image_path, caption, note_text, status: 'pending' | 'approved' | 'held', moderation_reason, created_at)
+- `post_reveals` (post_id, user_id, revealed_at) — who has scratched which post
+- `study_sessions` (id, user_id, group_id, started_at, ended_at, last_seen_at) — feeds caption context, check-ins and weekly story
 - `checkins` (id, group_id, message, created_at)
 - `reports` (id, post_id, reporter_id, reason, created_at)
+- `weekly_stories` (id, group_id, story, stats, created_at)
+
+Schema, RLS policies, storage policies and helper functions live in `supabase/migrations/0001_init.sql`.
 
 Row Level Security on every table: users can only read rows for groups they belong to, and only write their own posts, sessions and reports. Storage bucket `posts` is private; serve images with short-lived signed URLs. The widget only shows approved posts from the last 24 hours.
 

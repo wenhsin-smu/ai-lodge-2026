@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { addPost } from "@/lib/localPosts";
 import {
   NOTE_H,
   NOTE_W,
@@ -20,14 +19,13 @@ const NEEDLE_LIFT = 16;
 
 type Phase = "edit" | "stitching" | "done";
 
-export default function NoteComposer() {
+export default function NoteComposer({ onStitched }: { onStitched: (image: string, text: string) => void }) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const finishRef = useRef<() => void>(() => {});
   const [text, setText] = useState("");
   const [phase, setPhase] = useState<Phase>("edit");
   const [stitches, setStitches] = useState<Stitch[]>([]);
   const [image, setImage] = useState("");
-  const [sentNote, setSentNote] = useState("");
 
   const unsupported = unsupportedChars(text);
 
@@ -36,7 +34,6 @@ export default function NoteComposer() {
     if (built.length === 0) return;
     setStitches(built);
     setImage("");
-    setSentNote("");
     setPhase("stitching");
   }
 
@@ -92,15 +89,9 @@ export default function NoteComposer() {
   }, [phase, stitches]);
 
   function send() {
-    addPost({
-      kind: "note",
-      image,
-      caption: "",
-      noteText: text.trim(),
-    });
+    onStitched(image, text.trim());
     setText("");
     setPhase("edit");
-    setSentNote("Sent! Your friends will scratch to reveal it.");
   }
 
   return (
@@ -117,7 +108,6 @@ export default function NoteComposer() {
               placeholder="it's all in your head"
               onChange={(e) => {
                 setText(e.target.value);
-                setSentNote("");
               }}
             />
           </div>
@@ -130,7 +120,6 @@ export default function NoteComposer() {
             </button>
           </div>
           {unsupported.length > 0 && <p>These can&apos;t be stitched and will be skipped: {unsupported.join(" ")}</p>}
-          {sentNote && <p>{sentNote}</p>}
         </>
       ) : (
         <>
@@ -144,7 +133,7 @@ export default function NoteComposer() {
               <>
                 <button onClick={() => setPhase("edit")}>Edit</button>
                 <button onClick={() => setPhase("stitching")}>Watch again</button>
-                <button onClick={send}>Send</button>
+                <button onClick={send}>Use this note</button>
               </>
             )}
           </div>

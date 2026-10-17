@@ -1,28 +1,32 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { markRevealed, type LocalPost } from "@/lib/localPosts";
 
 const CW = 320;
 const CH = 240;
 const REVEAL_AT = 0.6;
 
-type Props = { post: LocalPost; viewerId: string; eraserSize: number };
+type Props = {
+  postId: string;
+  imageUrl: string | undefined;
+  author: string;
+  covered: boolean;
+  eraserSize: number;
+  onRevealed: () => void;
+  footer?: React.ReactNode;
+};
 
-export default function ScratchCard({ post, viewerId, eraserSize }: Props) {
+/** A post image under silver scratch-card foil. Scratch about 60% and the rest reveals itself. */
+export default function ScratchCard({ postId, imageUrl, author, covered, eraserSize, onRevealed, footer }: Props) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const last = useRef<{ x: number; y: number } | null>(null);
   const moves = useRef(0);
   const [fading, setFading] = useState(false);
 
-  // Friends' posts stay covered until this viewer scratches them; your own never are.
-  const mine = post.authorId === viewerId;
-  const covered = !mine && !post.revealedBy.includes(viewerId);
-
   useEffect(() => {
     if (!covered) return;
-    drawFoil(canvasRef.current!.getContext("2d")!, `From ${post.author}`, post.id);
-  }, [covered, post.author, post.id]);
+    drawFoil(canvasRef.current!.getContext("2d")!, `From ${author}`, postId);
+  }, [covered, author, postId]);
 
   function point(e: React.PointerEvent<HTMLCanvasElement>) {
     const rect = e.currentTarget.getBoundingClientRect();
@@ -55,15 +59,20 @@ export default function ScratchCard({ post, viewerId, eraserSize }: Props) {
     }
     if (cleared / total >= REVEAL_AT && !fading) {
       setFading(true);
-      setTimeout(() => markRevealed(post.id), 400);
+      setTimeout(onRevealed, 400);
     }
   }
 
   return (
     <figure style={{ margin: 0 }}>
       <div style={{ position: "relative", aspectRatio: `${CW} / ${CH}` }}>
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src={post.image} alt={`Post from ${post.author}`} style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />
+        {imageUrl ? (
+          // Signed URLs from a private bucket: plain <img>, no image optimizer.
+          // eslint-disable-next-line @next/next/no-img-element
+          <img src={imageUrl} alt={`Post from ${author}`} style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />
+        ) : (
+          <div style={{ width: "100%", height: "100%", background: "#ddd" }} />
+        )}
         {covered && (
           <canvas
             ref={canvasRef}
@@ -102,10 +111,7 @@ export default function ScratchCard({ post, viewerId, eraserSize }: Props) {
           />
         )}
       </div>
-      <figcaption style={{ marginTop: 4 }}>
-        <b>{mine ? "You" : post.author}</b>
-        {post.caption && (covered ? "" : `: ${post.caption}`)}
-      </figcaption>
+      {footer}
     </figure>
   );
 }

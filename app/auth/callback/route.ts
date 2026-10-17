@@ -15,10 +15,10 @@ export async function GET(request: NextRequest) {
 
   if (code) {
     const { error } = await supabase.auth.exchangeCodeForSession(code);
-    if (!error) return NextResponse.redirect(`${origin}/booth`);
+    if (!error) return NextResponse.redirect(`${origin}/`);
   } else if (tokenHash && type) {
     const { error } = await supabase.auth.verifyOtp({ type, token_hash: tokenHash });
-    if (!error) return NextResponse.redirect(`${origin}/booth`);
+    if (!error) return NextResponse.redirect(`${origin}/`);
   }
 
   return NextResponse.redirect(`${origin}/login?error=link`);

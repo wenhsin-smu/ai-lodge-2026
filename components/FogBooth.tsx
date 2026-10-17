@@ -3,7 +3,6 @@
 import { useEffect, useRef, useState } from "react";
 import { createBlowDetector, type BlowDetector } from "@/lib/blowDetector";
 import { createHandTracker, type HandTracker } from "@/lib/handTracker";
-import { addPost } from "@/lib/localPosts";
 
 const W = 640;
 const H = 480;
@@ -17,7 +16,15 @@ const SMOOTHING = 0.35;
 type Mode = "mouse" | "finger";
 type Point = { x: number; y: number };
 
-export default function FogBooth() {
+type Props = {
+  /** Fog mode: blow into the mic to fog the glass, then write on it. Off = plain photo. */
+  fog: boolean;
+  /** Hidden while the parent shows the preview, so the camera keeps running for a retake. */
+  hidden?: boolean;
+  onCapture: (image: string, kind: "fog" | "photo") => void;
+};
+
+export default function FogBooth({ fog, hidden = false, onCapture }: Props) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const cursorRef = useRef<HTMLDivElement>(null);
@@ -42,9 +49,6 @@ export default function FogBooth() {
   const [mode, setMode] = useState<Mode>("mouse");
   const [handStatus, setHandStatus] = useState<"off" | "loading" | "ready" | "error">("off");
   const [blowing, setBlowing] = useState(false);
-  const [preview, setPreview] = useState<{ image: string; kind: "fog" | "photo" } | null>(null);
-  const [caption, setCaption] = useState("");
-  const [sentNote, setSentNote] = useState("");
 
   useEffect(() => {
     thresholdRef.current = threshold;
@@ -70,18 +74,18 @@ export default function FogBooth() {
       const stream = await navigator.mediaDevices.getUserMedia({
         video: { width: W, height: H, facingMode: "user" },
         // Raw mic signal: browser noise suppression would hide the blowing sound.
-        audio: { echoCancellation: false, noiseSuppression: false, autoGainControl: false },
+        audio: fog ? { echoCancellation: false, noiseSuppression: false, autoGainControl: false } : false,
       });
       streamRef.current = stream;
       const video = videoRef.current!;
       video.srcObject = stream;
       await video.play();
-      blowRef.current = createBlowDetector(stream);
+      if (fog) blowRef.current = createBlowDetector(stream);
 
-      const fog = document.createElement("canvas");
-      fog.width = W;
-      fog.height = H;
-      fogRef.current = fog;
+      const fogCanvas = document.createElement("canvas");
+      fogCanvas.width = W;
+      fogCanvas.height = H;
+      fogRef.current = fogCanvas;
       const blur = document.createElement("canvas");
       blur.width = W;
       blur.height = H;
@@ -279,25 +283,11 @@ export default function FogBooth() {
   function takePhoto() {
     const canvas = canvasRef.current;
     if (!canvas) return;
-    setPreview({ image: canvas.toDataURL("image/jpeg", 0.85), kind: fogUsedRef.current ? "fog" : "photo" });
-    setCaption("");
-    setSentNote("");
-  }
-
-  function send() {
-    if (!preview) return;
-    addPost({
-      kind: preview.kind,
-      image: preview.image,
-      caption: caption.trim(),
-    });
-    setPreview(null);
-    clearFog();
-    setSentNote("Sent! Your friends will scratch to reveal it.");
+    onCapture(canvas.toDataURL("image/jpeg", 0.85), fog && fogUsedRef.current ? "fog" : "photo");
   }
 
   return (
-    <div className="stack" id="booth">
+    <div className="stack" style={{ display: hidden ? "none" : undefined }}>
       {/* Kept invisible but rendered so the browser keeps decoding frames. */}
       <video
         ref={videoRef}
@@ -307,14 +297,14 @@ export default function FogBooth() {
       />
 
       {/* Viewfinder: always visible (except during preview) so it's clear where the camera goes. */}
-      <div className="viewfinder" style={{ display: preview ? "none" : "block" }}>
+      <div className={fog ? "viewfinder crt-glass" : "viewfinder"}>
         <canvas
           ref={canvasRef}
           width={W}
           height={H}
           style={{
             display: running ? "block" : "none",
-            cursor: mode === "mouse" ? "crosshair" : "default",
+            cursor: fog && mode === "mouse" ? "crosshair" : "default",
           }}
           onPointerDown={onPointerDown}
           onPointerMove={onPointerMove}
@@ -328,8 +318,9 @@ export default function FogBooth() {
               {starting ? "Waiting for permission..." : "Turn on camera"}
             </button>
             <p className="viewfinder-hint">
-              The browser will ask to use your camera and microphone (for blowing fog). Nothing is saved until you
-              press Take photo.
+              {fog
+                ? "The browser will ask for your camera and microphone (blow into the mic to fog the glass). Nothing is saved until you press Take photo."
+                : "The browser will ask for your camera. Nothing is saved until you press Take photo."}
             </p>
             {error && (
               <p role="alert" className="viewfinder-error">
@@ -358,7 +349,13 @@ export default function FogBooth() {
         />
       </div>
 
-      {running && !preview && (
+      {running && !fog && (
+        <div className="field-row">
+          <button onClick={takePhoto}>Take photo</button>
+        </div>
+      )}
+
+      {running && fog && (
         <div className="stack">
           <div className="field-row">
             <span>Mic</span>
@@ -412,25 +409,10 @@ export default function FogBooth() {
           <div className="field-row">
             <button onClick={clearFog}>Clear fog</button>
             <button onClick={takePhoto}>Take photo</button>
-            {sentNote && <span>{sentNote}</span>}
           </div>
         </div>
       )}
 
-      {preview && (
-        <div className="stack">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={preview.image} alt="Preview of your post" style={{ width: "100%" }} />
-          <div className="field-row-stacked">
-            <label htmlFor="caption">Caption (optional)</label>
-            <input id="caption" type="text" maxLength={80} value={caption} onChange={(e) => setCaption(e.target.value)} />
-          </div>
-          <div className="field-row">
-            <button onClick={() => setPreview(null)}>Retake</button>
-            <button onClick={send}>Send</button>
-          </div>
-        </div>
-      )}
     </div>
   );
 }
