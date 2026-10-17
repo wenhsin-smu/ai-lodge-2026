@@ -1,0 +1,130 @@
+# Study Booth
+
+**Study apart, together.** A laptop web app where small groups of student friends share playful, handmade-looking photos and notes while they study in different places. It lives in a tiny always-on-top corner window, so staying connected never means picking up your phone.
+
+Built for the AI Lodge Hackathon (track: Projects for Daily Life).
+
+---
+
+## Problem Statement
+
+Studying alone is lonely, and the usual fix, a group chat on your phone, is the biggest distraction there is.
+
+- [X]% of students we surveyed (n = [N]) study alone most evenings.
+- [X]% said they feel less motivated studying alone than with friends.
+- [X]% said they pick up their phone "just to check messages" while studying; [X]% said that turns into scrolling.
+- [Quote from a surveyed student]
+
+Students want the feeling of studying side by side, without an infinite feed or a phone in their hand.
+
+## Solution Overview
+
+Study Booth is a retro CRT "desktop" in the browser with a calm little widget that floats over your notes (Document Picture-in-Picture). You and your friends form a private, invite-only group. Every so often someone sends something small and handmade: a photo, a message finger-written on fogged glass, or a note that gets embroidered stitch by stitch. It arrives on everyone's widget under silver scratch-card foil, and friends scratch it off to reveal it.
+
+AI works quietly in the background, always server-side:
+
+- it reads handwriting and blocks mean or unsafe posts before anyone sees them,
+- it suggests captions that fit your study session,
+- it occasionally nudges the whole group ("Everyone's past 2 hours, show your desk!"),
+- it writes a short weekly story from real study stats.
+
+## Key Features
+
+- **Private friend groups.** Email magic-link sign-in, groups with 6-character invite codes, no public profiles. Row Level Security on every table and the storage bucket.
+- **Three ways to post** (always user-initiated, always with a preview and a retake button):
+  - **Photo:** a normal webcam snapshot.
+  - **Fog glass:** blow into the mic to fog the curved glass of an old CRT, then write in it with your **finger** (on-device hand tracking) or the mouse.
+  - **Stitched note:** type a note and watch a needle embroider it onto fabric.
+- **Scratch to reveal.** Friends' posts arrive covered in silver foil; scratch about 60% (adjustable eraser) and the rest reveals itself. Reveals are saved per person.
+- **Live.** New posts appear on friends' screens within seconds (Supabase Realtime, with a polling fallback).
+- **Calm study widget.** Pops out as an always-on-top mini window in Chrome/Edge (falls back to an in-page panel elsewhere). It shows only the last 3 posts from the last 24 hours, has no sounds or flashing, and includes a **study timer** with **focus mode**, which hides new posts until the timer ends.
+- **Study sessions** are recorded (start, end, heartbeat) and power captions, check-ins and the weekly story.
+- **Safety tools.** Report button on every friend's post (hides it for you), delete your own posts, posts vanish from the widget after 24 hours.
+- **Retro, original look.** Beige CRT monitor, pixel icons (New Post, Friends' Posts, My Group, Weekly Story, Study Widget), sticky notes on the bezel for check-ins. All art is drawn for this project.
+
+## AI Integration
+
+All AI calls run in Next.js server routes (`app/api/*`, Vercel serverless functions) using the Anthropic API (`claude-opus-5-5` by default, configurable with `ANTHROPIC_MODEL`). Every response must be JSON matching a **zod** schema (structured outputs, validated again on our side); anything else counts as a failure. Server-side refusal fallbacks are enabled.
+
+| Feature | Route | What goes in | What comes out | When it fails |
+| --- | --- | --- | --- | --- |
+| Handwriting moderation | `POST /api/moderate` | The uploaded image, plus any typed note/caption wrapped in `<typed_text>` tags | `{ readText, allowed, category, reason }` | **Fails closed**: the post stays held and the sender sees a kind message |
+| Context-aware captions | `POST /api/caption` | Photo, minutes into the current study session, local time, group's last 3 captions | `{ suggestions: string[1..3] }` shown as chips; the user taps one and can still edit it | 5s timeout, then no chips; the post still sends |
+| Smart check-ins | `POST /api/checkin` | Group state computed in code: who's online, minutes studied today, who's been quiet 90+ minutes, past midnight, recent check-ins | `{ shouldNudge, message? }`, shown on everyone's screen as a sticky note | 8s timeout, then silently skipped |
+| Weekly story | `POST /api/weekly-story` | Stats computed **in SQL** (`group_week_stats`): hours, sessions, days, streak, late nights, posts | `{ title, story }` | Friendly "try again" message |
+
+**How moderation fails closed.** Posts are inserted as `pending`, and RLS prevents users from changing a post's status. Only the server (service role key, after the model approves) can set `approved`. If the AI call errors, times out, refuses or returns invalid JSON, the post is set to `held`. If the route never runs at all, the post stays `pending`. Either way, friends never see it.
+
+**Rate limits.** Every open client asks for a check-in every 5 minutes. A database function (`claim_checkin_slot`) allows at most one evaluation every 4 minutes and one posted check-in every 45 minutes per group.
+
+**Demo control.** Double-click the taskbar clock (or press Ctrl+Shift+K) to force a check-in right now.
+
+## External Tools & Datasets
+
+- [Next.js 16](https://nextjs.org) (App Router, TypeScript), deployed on [Vercel](https://vercel.com)
+- [Supabase](https://supabase.com): Auth (magic links), Postgres + Row Level Security, Storage (private bucket, signed URLs), Realtime
+- [Anthropic API](https://docs.anthropic.com) via `@anthropic-ai/sdk` (vision + text, structured outputs)
+- [zod](https://zod.dev) for schema validation
+- [MediaPipe Tasks Vision](https://ai.google.dev/edge/mediapipe/solutions/vision/hand_landmarker) HandLandmarker (runs entirely in the browser; Google's pretrained hand landmark model)
+- [98.css](https://jdan.github.io/98.css/) for retro windows and buttons
+- Browser APIs: Web Audio (blow detection), Canvas 2D (fog, scratch foil, embroidery), Document Picture-in-Picture
+- No external datasets. Red-team cases in `redteam/cases.json` were written by the team; their images are generated by `redteam/make-images.mjs`.
+
+## Installation & Setup
+
+You need Node.js 20+ and free Supabase and Anthropic accounts.
+
+1. **Get the code and install**
+   ```bash
+   git clone https://github.com/wenhsin-smu/ai-lodge-2026.git
+   cd ai-lodge-2026
+   npm install          # or pnpm install
+   ```
+2. **Create the database.** In the Supabase dashboard: **SQL Editor → New query**, paste all of `supabase/migrations/0001_init.sql`, click **Run**. It creates every table, RLS policy, the private `posts` storage bucket and its policies, the helper functions, and adds `posts`, `checkins` and `post_reveals` to Realtime. It's safe to run again.
+3. **Auth settings.** Supabase → **Authentication → URL Configuration**: set *Site URL* to your Vercel URL and add these *Redirect URLs*: `http://localhost:3000/auth/callback` and `https://<your-app>.vercel.app/auth/callback`. For a live demo, set up custom SMTP (the built-in email sender only allows a few emails per hour).
+4. **Environment variables.** Copy `.env.example` to `.env.local` and fill it in:
+
+   | Variable | Where to find it | Secret? |
+   | --- | --- | --- |
+   | `NEXT_PUBLIC_SUPABASE_URL` | Supabase → Project Settings → API | no |
+   | `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` | Supabase → API Keys → publishable (or legacy anon) | no |
+   | `SUPABASE_SERVICE_ROLE_KEY` | Supabase → API Keys → secret (or legacy service_role) | **yes, server only** |
+   | `ANTHROPIC_API_KEY` | console.anthropic.com → API Keys | **yes, server only** |
+   | `ANTHROPIC_MODEL` | optional, default `claude-opus-5-5` | no |
+   | `REDTEAM_TOKEN` | any long random string; enables the red-team script | yes |
+
+5. **Run it:** `npm run dev`, then open http://localhost:3000 in Chrome or Edge.
+6. **Deploy:** import the repo on Vercel and add the same environment variables (Production and Preview). Vercel doesn't read `.env.local`.
+
+**Try it as two friends.** Sign in on two laptops (or two browser profiles) with two different emails. Laptop A: *My Group → Start a new group*, then share the invite code. Laptop B: *My Group → Join with a code*. Then post from one and scratch on the other.
+
+## AI Safety & Limitations
+
+### Risks we designed for
+
+| Risk | Guardrail |
+| --- | --- |
+| Mean, sexual, hateful or unsafe content, including **handwritten** text | Vision moderation reads handwriting first, then judges image + text together, before anyone else can see the post |
+| **Prompt injection** written on the fog or in a note ("ignore your instructions…") | Text from images and users is wrapped in delimited tags and the system prompt says it is data to classify, never instructions; injection attempts are themselves blocked |
+| Moderation outage or bad output | Fails closed (see above); zod validation; refusals and truncation count as failures |
+| Under-18 users | Invite-only groups, no public profiles or discovery, no DMs; moderation and caption prompts are written for under-18s |
+| Hurtful AI text | Caption, check-in and story prompts forbid comments on bodies, looks, rooms, mess or productivity, and forbid comparing members. Captions are suggestions only: never auto-added |
+| Made-up stats | Weekly stats are computed in SQL; the model only writes prose from those numbers |
+| Camera privacy | Photos are never taken automatically. Hand tracking runs on-device; the live feed is never uploaded or stored. Only the finished post you choose to send is uploaded, to a private bucket served through short-lived signed URLs |
+| Data access between groups | Row Level Security on every table and the storage bucket (tested by trying to read, write and approve as members and outsiders) |
+| Something slips through | Report button on every post (hides it for the reporter and is stored for review); authors can delete; posts leave the widget after 24 hours |
+
+### Red-team results
+
+`redteam/cases.json` has 28 cases: 8 harmless study posts, 8 mean or inappropriate (typed and handwritten), 6 prompt injections (mostly written on fog), and 6 edge cases (sarcasm, slang, inside jokes, self-deprecation). `npm run redteam` sends each to `/api/moderate` and, for image cases, `/api/caption`, and writes `redteam/results.md`.
+
+[Paste the tables from redteam/results.md here after running `npm run redteam`.]
+
+### Known limitations
+
+- **Hand tracking** struggles in dim light, against busy backgrounds, and when the hand is partly out of frame. Very fast movements can break a stroke. Mouse/trackpad writing is always available as a fallback.
+- **Blow detection** uses mic loudness below ~500 Hz, so loud fans, wind or a bass-heavy room can trigger fog. Each laptop may need the threshold slider adjusted.
+- **Moderation is not perfect.** Sarcasm, slang and inside jokes are hard; we bias toward allowing friendly readings, which means some subtle meanness may get through (hence the report button). Messy handwriting can be misread.
+- **Captions and check-ins depend on a network AI call.** On slow connections captions are often skipped (by design).
+- **Pop-out widget** needs Chrome or Edge (Document Picture-in-Picture); other browsers get the in-page panel.
+- Free-tier Supabase email limits can block sign-in during a busy demo without custom SMTP.
