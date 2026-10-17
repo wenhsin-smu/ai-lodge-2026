@@ -1,6 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { getCaller, isUuid } from "@/lib/apiAuth";
-import { aiConfigured } from "@/lib/ai";
+import { aiConfigured, describeAiError } from "@/lib/ai";
 import { moderatePost } from "@/lib/moderation";
 import { createAdminClient, hasAdminEnv } from "@/utils/supabase/admin";
 
@@ -23,7 +23,7 @@ export async function POST(request: NextRequest) {
       });
       return NextResponse.json(decision);
     } catch (e) {
-      return NextResponse.json({ allowed: false, readText: "", category: "other", reason: `error: ${String(e)}` });
+      return NextResponse.json({ allowed: false, readText: "", category: "other", reason: `error: ${describeAiError(e)}` });
     }
   }
 
@@ -70,7 +70,8 @@ export async function POST(request: NextRequest) {
     }
     return hold(`${decision.category}: ${decision.reason}`, decision.reason);
   } catch (e) {
-    console.error("moderation failed", e);
-    return hold("moderation error", HELD_ERROR);
+    const why = describeAiError(e);
+    console.error(`moderation failed: ${why}`, e);
+    return hold(`moderation error: ${why}`, `${HELD_ERROR} (${why})`);
   }
 }

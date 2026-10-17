@@ -73,7 +73,12 @@ function PostFooter({ post, mine, covered, compact }: { post: Post; mine: boolea
       </div>
       {!covered && post.caption && <div className="post-caption">{post.caption}</div>}
       {mine && post.status === "held" && post.moderation_reason && !compact && (
-        <div className="hint">Only you can see this. {post.moderation_reason.replace(/^[a-z_]+: /, "")}</div>
+        <div className="hint">
+          Only you can see this.{" "}
+          {post.moderation_reason.startsWith("moderation error")
+            ? `We couldn't check it (${post.moderation_reason.replace(/^moderation error:? ?/, "") || "AI error"}), so it wasn't shared. Delete it and try again.`
+            : post.moderation_reason.replace(/^[a-z_]+: /, "")}
+        </div>
       )}
       <div className="field-row post-actions">
         {mode === "idle" && mine && (
