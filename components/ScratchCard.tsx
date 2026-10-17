@@ -65,7 +65,7 @@ export default function ScratchCard({ postId, imageUrl, author, covered, eraserS
 
   return (
     <figure style={{ margin: 0 }}>
-      <div style={{ position: "relative", aspectRatio: `${CW} / ${CH}` }}>
+      <div className="scratch-frame" style={{ position: "relative", aspectRatio: `${CW} / ${CH}` }}>
         {imageUrl ? (
           // Signed URLs from a private bucket: plain <img>, no image optimizer.
           // eslint-disable-next-line @next/next/no-img-element

@@ -115,7 +115,7 @@ export default function NoteComposer({ onStitched }: { onStitched: (image: strin
             <span>
               {text.length}/{MAX_CHARS}
             </span>
-            <button onClick={stitch} disabled={buildStitches(text).length === 0}>
+            <button className="pill-green" onClick={stitch} disabled={buildStitches(text).length === 0}>
               Stitch it
             </button>
           </div>
@@ -132,8 +132,12 @@ export default function NoteComposer({ onStitched }: { onStitched: (image: strin
             ) : (
               <>
                 <button onClick={() => setPhase("edit")}>Edit</button>
-                <button onClick={() => setPhase("stitching")}>Watch again</button>
-                <button onClick={send}>Use this note</button>
+                <button className="pill-pink" onClick={() => setPhase("stitching")}>
+                  Watch again
+                </button>
+                <button className="pill-green" onClick={send}>
+                  Use this note
+                </button>
               </>
             )}
           </div>

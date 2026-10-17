@@ -1,282 +1,679 @@
+/* Study Booth: bright, glossy Y2K / late-2000s gadget look.
+   All colours live in these variables. */
+:root {
+  /* Base: cream, pearl, chrome */
+  --cream: #faf8f3;
+  --pearl: #f2efe8;
+  --pearl-hi: #ffffff;
+  --pearl-lo: #dadde2;
+  --chrome-hi: #fdfdfe;
+  --chrome-mid: #e4e7ec;
+  --chrome-lo: #b9bec7;
+  --chrome-edge: #9aa0aa;
+
+  /* Pastel accents: top -> bottom of each glossy gradient, plus a darker edge */
+  --lime-hi: #c8e88a;
+  --lime-lo: #a8d45e;
+  --lime-edge: #7fa83a;
+  --pink-hi: #f8c6d8;
+  --pink-lo: #efa3bf;
+  --pink-edge: #cf6f95;
+  --sky-hi: #bfe0f7;
+  --sky-lo: #94c8ee;
+  --sky-edge: #5c9fd0;
+  --pearl-btn-hi: #ffffff;
+  --pearl-btn-lo: #dadde2;
+  --pearl-btn-edge: #a3a8b1;
+
+  /* Text */
+  --ink: #3a3a40;
+  --ink-soft: #5e5e66;
+
+  /* Surfaces */
+  --bg-top: #fbf7ee;
+  --bg-bottom: #e3f1fb;
+  --panel: #fbfaf6;
+  --panel-edge: #e2ddd2;
+  --lcd: #dff2c2;
+  --lcd-ink: #3b4a26;
+
+  --radius-panel: 22px;
+  --radius-pill: 999px;
+  --shadow-soft: 0 10px 28px rgba(80, 90, 120, 0.16), 0 2px 6px rgba(80, 90, 120, 0.1);
+  --font-ui-stack: var(--font-ui), "Nunito", "Avenir Next", system-ui, sans-serif;
+  --font-display-stack: var(--font-display), var(--font-ui), "Nunito", system-ui, sans-serif;
+}
+
 * {
   box-sizing: border-box;
 }
 
-/* Room behind the monitor: a warm desk-lamp wall. */
+html,
+body {
+  font-family: var(--font-ui-stack);
+  color: var(--ink);
+  font-size: 14px;
+}
+
 body {
   margin: 0;
   min-height: 100vh;
   padding: 16px;
-  background: radial-gradient(ellipse at 50% 20%, #f3e3c3 0%, #d9c39c 55%, #b89f7a 100%);
+  background:
+    radial-gradient(circle at 12% 18%, rgba(248, 198, 216, 0.45), transparent 22%),
+    radial-gradient(circle at 88% 12%, rgba(200, 232, 138, 0.4), transparent 20%),
+    radial-gradient(circle at 78% 82%, rgba(191, 224, 247, 0.6), transparent 26%),
+    radial-gradient(circle at 25% 88%, rgba(255, 255, 255, 0.9), transparent 18%),
+    linear-gradient(170deg, var(--bg-top) 0%, var(--bg-bottom) 100%);
+  background-attachment: fixed;
 }
 
-.window {
-  width: 100%;
+h1,
+h2,
+h3 {
+  font-family: var(--font-display-stack);
+  font-weight: 700;
+  margin: 0;
+}
+
+p {
+  margin: 0;
 }
 
 .stack {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 10px;
 }
 
 .hint {
-  color: #555;
+  color: var(--ink-soft);
+}
+
+/* ---------------------------------------------------------------- glossy pill buttons
+   Every <button> is a pearl jelly pill by default; pill-green / pill-pink / pill-blue
+   pick a role colour: green = post/send, pink = fog & fun, blue = timer/focus/widget. */
+
+button {
+  --hi: var(--pearl-btn-hi);
+  --lo: var(--pearl-btn-lo);
+  --edge: var(--pearl-btn-edge);
+  position: relative;
+  isolation: isolate; /* lets the shine sit behind the label text */
+  overflow: hidden;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: 34px;
+  padding: 6px 18px;
+  border: 1px solid var(--edge);
+  border-radius: var(--radius-pill);
+  background: linear-gradient(180deg, var(--hi) 0%, var(--lo) 100%);
+  color: var(--ink);
+  font: 700 14px/1.1 var(--font-ui-stack);
+  cursor: pointer;
+  box-shadow:
+    inset 0 -3px 5px rgba(0, 0, 0, 0.08),
+    inset 0 1px 0 rgba(255, 255, 255, 0.9),
+    0 3px 7px rgba(70, 80, 110, 0.18);
+  transition:
+    filter 0.15s ease,
+    transform 0.08s ease,
+    box-shadow 0.15s ease;
+}
+
+/* The candy shine: a white highlight that stops sharply halfway down. */
+button::after {
+  content: "";
+  position: absolute;
+  left: 6%;
+  right: 6%;
+  top: 1px;
+  height: 48%;
+  border-radius: var(--radius-pill) var(--radius-pill) 40% 40% / var(--radius-pill) var(--radius-pill) 30% 30%;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.95) 0%, rgba(255, 255, 255, 0.35) 100%);
+  pointer-events: none;
+  z-index: -1;
+}
+
+button > * {
+  position: relative;
+  z-index: 1;
+}
+
+button:hover:not(:disabled) {
+  filter: brightness(1.05) saturate(1.05);
+}
+
+button:active:not(:disabled) {
+  transform: translateY(1px);
+  box-shadow:
+    inset 0 -1px 3px rgba(0, 0, 0, 0.1),
+    inset 0 1px 0 rgba(255, 255, 255, 0.9),
+    0 1px 3px rgba(70, 80, 110, 0.2);
+}
+
+button:focus-visible {
+  outline: 3px solid var(--sky-lo);
+  outline-offset: 2px;
+}
+
+button:disabled {
+  cursor: default;
+  opacity: 0.55;
+  filter: grayscale(0.4);
+}
+
+.pill-green {
+  --hi: var(--lime-hi);
+  --lo: var(--lime-lo);
+  --edge: var(--lime-edge);
+}
+
+.pill-pink {
+  --hi: var(--pink-hi);
+  --lo: var(--pink-lo);
+  --edge: var(--pink-edge);
+}
+
+.pill-blue {
+  --hi: var(--sky-hi);
+  --lo: var(--sky-lo);
+  --edge: var(--sky-edge);
 }
 
 button.small {
-  min-width: 0;
-  padding: 0 8px;
-  min-height: 20px;
-}
-
-/* ---------------------------------------------------------------- CRT monitor */
-
-.monitor {
-  max-width: 1280px;
-  margin: 0 auto;
-}
-
-.monitor-bezel {
-  position: relative;
-  background: linear-gradient(160deg, #efe6d2 0%, #ddd1b8 60%, #cbbd9f 100%);
-  border-radius: 28px;
-  padding: 34px 34px 18px;
-  box-shadow:
-    inset 0 2px 0 #fff8e8,
-    inset 0 -4px 0 #b3a385,
-    0 18px 40px rgba(70, 50, 20, 0.35);
-}
-
-.monitor-screen {
-  position: relative;
-  border-radius: 26px / 30px;
-  overflow: hidden;
-  min-height: calc(100vh - 150px);
-  display: flex;
-  flex-direction: column;
-  box-shadow:
-    0 0 0 6px #5c564b,
-    0 0 0 8px #a89c84,
-    inset 0 0 60px rgba(0, 0, 0, 0.45);
-  /* Original wallpaper: dusk teal with a soft dither and a faint checker of paper squares. */
-  background-color: #2b7f86;
-  background-image:
-    radial-gradient(rgba(255, 255, 255, 0.07) 1px, transparent 1px),
-    linear-gradient(45deg, rgba(255, 255, 255, 0.03) 25%, transparent 25%, transparent 75%, rgba(255, 255, 255, 0.03) 75%);
-  background-size: 4px 4px, 48px 48px;
-}
-
-/* Curved-glass glare and faint scanlines. Pointer-transparent. */
-.screen-glare {
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-  background:
-    radial-gradient(ellipse at 25% 10%, rgba(255, 255, 255, 0.12), transparent 45%),
-    repeating-linear-gradient(0deg, rgba(0, 0, 0, 0.04) 0 1px, transparent 1px 3px);
-}
-
-.monitor-brand {
-  display: flex;
-  align-items: center;
-  justify-content: flex-end;
-  gap: 8px;
-  margin-top: 10px;
-  font: bold 11px/1 "Courier New", monospace;
-  letter-spacing: 2px;
-  color: #8a7c62;
-}
-
-.monitor-led {
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  background: #7ddc7a;
-  box-shadow: 0 0 4px #7ddc7a;
-}
-
-.monitor-stand {
-  width: 220px;
-  height: 22px;
-  margin: 0 auto;
-  background: linear-gradient(#cbbd9f, #b3a385);
-  border-radius: 0 0 40px 40px;
-}
-
-/* Sticky notes stuck on the bezel, top right. */
-.bezel-notes {
-  position: absolute;
-  top: -10px;
-  right: 50px;
-  display: flex;
-  gap: 12px;
-  z-index: 5;
-}
-
-.sticky-note {
-  position: relative;
-  width: 190px;
-  padding: 14px 12px 12px;
-  background: #fff07a;
-  color: #3b3200;
-  font: 14px/1.3 "Comic Sans MS", "Chalkboard SE", cursive;
-  box-shadow: 0 4px 8px rgba(60, 40, 0, 0.25);
-  transform: rotate(-2deg);
-}
-
-.sticky-note:nth-child(2) {
-  background: #ffc7d9;
-  transform: rotate(2.5deg);
-}
-
-.sticky-note::before {
-  content: "";
-  position: absolute;
-  top: -6px;
-  left: 50%;
-  width: 46px;
-  height: 14px;
-  margin-left: -23px;
-  background: rgba(255, 255, 255, 0.55);
-  transform: rotate(-3deg);
-}
-
-.sticky-note.small-note {
-  width: auto;
-  transform: none;
+  min-height: 26px;
+  padding: 3px 12px;
   font-size: 12px;
 }
 
-.sticky-close {
-  position: absolute;
-  top: 2px;
-  right: 2px;
+/* ---------------------------------------------------------------- form controls */
+
+input[type="text"],
+input[type="email"],
+input:not([type]),
+select,
+textarea {
+  font: 600 14px var(--font-ui-stack);
+  color: var(--ink);
+  padding: 7px 12px;
+  border: 1px solid var(--pearl-lo);
+  border-radius: 14px;
+  background: linear-gradient(180deg, #f3f4f6, #ffffff 40%);
+  box-shadow: inset 0 2px 3px rgba(60, 70, 90, 0.12);
   min-width: 0;
-  min-height: 0;
-  padding: 0 5px;
-  background: transparent;
-  box-shadow: none;
-  font-size: 14px;
 }
 
-/* ---------------------------------------------------------------- desktop */
+select {
+  border-radius: var(--radius-pill);
+  padding-right: 28px;
+}
 
-.desktop {
+textarea {
+  resize: vertical;
+}
+
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+  outline: 3px solid var(--sky-hi);
+  border-color: var(--sky-edge);
+}
+
+input[type="checkbox"],
+input[type="radio"] {
+  width: 18px;
+  height: 18px;
+  margin: 0;
+  accent-color: var(--lime-edge);
+}
+
+input[type="range"] {
+  accent-color: var(--sky-edge);
+  flex: 1;
+  min-width: 80px;
+}
+
+label {
+  font-weight: 600;
+}
+
+.field-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.field-row-stacked {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+fieldset {
+  margin: 0;
+  padding: 12px 14px 14px;
+  border: 1px solid var(--panel-edge);
+  border-radius: 18px;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.9), rgba(242, 239, 232, 0.6));
+  box-shadow: inset 0 1px 0 #fff;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+legend {
+  padding: 2px 10px;
+  border-radius: var(--radius-pill);
+  background: linear-gradient(180deg, var(--chrome-hi), var(--chrome-mid));
+  border: 1px solid var(--chrome-lo);
+  font: 700 12px var(--font-ui-stack);
+  color: var(--ink-soft);
+}
+
+.tree-view {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.tree-view li {
+  padding: 3px 10px;
+  border-radius: var(--radius-pill);
+  background: var(--pearl);
+  border: 1px solid var(--panel-edge);
+}
+
+/* ---------------------------------------------------------------- gadget windows */
+
+.window {
+  width: 100%;
+  position: relative;
+  border-radius: var(--radius-panel);
+  background: linear-gradient(180deg, #ffffff 0%, var(--panel) 30%, var(--pearl) 100%);
+  border: 1px solid var(--panel-edge);
+  box-shadow:
+    var(--shadow-soft),
+    inset 0 2px 0 rgba(255, 255, 255, 0.95),
+    inset 0 -3px 6px rgba(120, 110, 90, 0.08);
+}
+
+.title-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin: 8px 8px 0;
+  padding: 5px 8px 5px 14px;
+  border-radius: 16px;
+  background: linear-gradient(180deg, var(--chrome-hi) 0%, var(--chrome-mid) 55%, var(--chrome-lo) 100%);
+  border: 1px solid var(--chrome-lo);
+  box-shadow: inset 0 1px 0 #fff;
+}
+
+.title-bar-text {
+  font: 700 15px var(--font-display-stack);
+  color: var(--ink);
+  letter-spacing: 0.2px;
+}
+
+.title-bar-controls {
+  display: flex;
+  gap: 4px;
+}
+
+/* Close control: a tiny pink pill. */
+.title-bar-controls button {
+  --hi: var(--pink-hi);
+  --lo: var(--pink-lo);
+  --edge: var(--pink-edge);
+  min-height: 22px;
+  width: 30px;
+  padding: 0;
+}
+
+.title-bar-controls button[aria-label="Close"]::before {
+  content: "×";
+  position: relative;
+  z-index: 1;
+  font: 800 15px/1 var(--font-ui-stack);
+  color: var(--ink);
+}
+
+.window-body {
+  padding: 14px 16px 16px;
+}
+
+/* Tabs: a segmented row of pills. */
+menu[role="tablist"] {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+menu[role="tablist"] li a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 32px;
+  padding: 4px 16px;
+  border-radius: var(--radius-pill);
+  background: linear-gradient(180deg, #fff, var(--pearl));
+  border: 1px solid var(--pearl-lo);
+  color: var(--ink-soft);
+  font-weight: 700;
+  text-decoration: none;
+}
+
+menu[role="tablist"] li[aria-selected="true"] a {
+  color: var(--ink);
+  border-color: var(--tab-edge, var(--lime-edge));
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.85) 0%, rgba(255, 255, 255, 0.3) 48%, transparent 49%),
+    linear-gradient(180deg, var(--tab-hi, var(--lime-hi)), var(--tab-lo, var(--lime-lo)));
+  box-shadow: 0 2px 6px rgba(70, 80, 110, 0.18);
+}
+
+li.tab-green {
+  --tab-hi: var(--lime-hi);
+  --tab-lo: var(--lime-lo);
+  --tab-edge: var(--lime-edge);
+}
+
+li.tab-pink {
+  --tab-hi: var(--pink-hi);
+  --tab-lo: var(--pink-lo);
+  --tab-edge: var(--pink-edge);
+}
+
+li.tab-blue {
+  --tab-hi: var(--sky-hi);
+  --tab-lo: var(--sky-lo);
+  --tab-edge: var(--sky-edge);
+}
+
+.window[role="tabpanel"] {
+  margin-top: 10px;
+  box-shadow: inset 0 2px 0 #fff;
+  background: rgba(255, 255, 255, 0.6);
+}
+
+/* ---------------------------------------------------------------- the desk (home screen) */
+
+.monitor {
+  max-width: 1320px;
+  margin: 0 auto;
+  min-height: calc(100vh - 32px);
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.desk-bar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 10px 8px 16px;
+  border-radius: var(--radius-pill);
+  background: linear-gradient(180deg, #ffffff 0%, var(--pearl) 60%, var(--pearl-lo) 100%);
+  border: 1px solid var(--pearl-lo);
+  box-shadow: var(--shadow-soft), inset 0 1px 0 #fff;
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font: 800 20px var(--font-display-stack);
+  color: var(--ink);
+}
+
+.brand-dot {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background:
+    radial-gradient(circle at 35% 30%, #fff 0 18%, transparent 22%),
+    radial-gradient(circle at 50% 55%, var(--sky-lo), #3c78b0 80%);
+  box-shadow: 0 0 0 3px var(--chrome-mid), 0 0 0 4px var(--chrome-lo);
+}
+
+.taskbar {
   flex: 1;
   display: flex;
-  gap: 16px;
-  padding: 18px;
+  align-items: center;
+  gap: 10px;
+  justify-content: flex-end;
+}
+
+.taskbar form {
+  margin: 0;
+}
+
+.taskbar-user {
+  flex: 1;
+  color: var(--ink-soft);
+  font-weight: 700;
+}
+
+.taskbar-clock {
+  padding: 4px 12px;
+  border-radius: var(--radius-pill);
+  background: var(--lcd);
+  color: var(--lcd-ink);
+  font: 800 13px var(--font-ui-stack);
+  box-shadow: inset 0 2px 3px rgba(40, 60, 20, 0.2);
+  user-select: none;
+}
+
+.desk-surface {
+  position: relative;
+  flex: 1;
+}
+
+.desktop {
+  display: flex;
+  gap: 20px;
   align-items: flex-start;
 }
 
 .desktop-icons {
   display: flex;
   flex-direction: column;
-  gap: 10px;
-  width: 92px;
+  gap: 14px;
+  width: 100px;
   flex-shrink: 0;
 }
 
+/* Desktop icons are glossy tiles, not pills. */
 .desktop-icon {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 4px;
-  min-width: 0;
-  padding: 6px 2px;
+  gap: 6px;
+  min-height: 0;
+  padding: 6px 4px;
+  border: none;
+  border-radius: 18px;
   background: transparent;
   box-shadow: none;
-  color: #fff;
-  text-shadow: 1px 1px 0 #000;
-  font-size: 11px;
+  color: var(--ink);
+  font: 700 12px var(--font-ui-stack);
 }
 
-.desktop-icon:focus span,
+.desktop-icon::after {
+  display: none;
+}
+
+.desktop-icon svg {
+  filter: drop-shadow(0 5px 6px rgba(70, 80, 110, 0.25));
+  transition: transform 0.15s ease;
+}
+
+.desktop-icon:hover:not(:disabled) {
+  filter: none;
+}
+
+.desktop-icon:hover svg {
+  transform: translateY(-2px);
+}
+
+.desktop-icon:focus-visible span,
 .desktop-icon:hover span {
-  background: #0a246a;
-  outline: 1px dotted #fff;
+  background: rgba(255, 255, 255, 0.85);
+  border-radius: var(--radius-pill);
+  padding: 0 6px;
 }
 
 .desktop-windows {
   flex: 1;
   display: flex;
   flex-wrap: wrap;
-  gap: 16px;
+  gap: 20px;
   align-items: flex-start;
   min-width: 0;
 }
 
 .app-window {
-  width: 360px;
+  width: 380px;
   max-width: 100%;
 }
 
 .app-window.wide {
-  width: 640px;
+  width: 680px;
 }
 
 .app-window .window-body {
-  max-height: calc(100vh - 260px);
+  max-height: calc(100vh - 210px);
   overflow-y: auto;
 }
 
 .desktop-loading {
-  color: #fff;
+  color: var(--ink-soft);
+  font-weight: 700;
 }
 
-.taskbar {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 4px 10px;
-  background: #c0c0c0;
-  box-shadow: inset 0 1px #fff, inset 0 2px #dfdfdf;
-}
-
-.taskbar-user {
-  flex: 1;
-}
-
-.taskbar-clock {
-  padding: 2px 8px;
-  box-shadow: inset -1px -1px #fff, inset 1px 1px #808080;
-  user-select: none;
-}
-
-.window[role="tabpanel"] {
-  max-width: none;
-}
-
-/* After midnight: a warm lamp glow over the screen (static, no animation). */
-.monitor-screen.late-night .screen-glare {
-  background:
-    radial-gradient(ellipse at 80% 0%, rgba(255, 170, 70, 0.22), transparent 55%),
-    repeating-linear-gradient(0deg, rgba(0, 0, 0, 0.04) 0 1px, transparent 1px 3px);
-}
-
-.late-night-tag {
+/* Sticky notes: pastel paper with a tiny glossy tape strip. */
+.bezel-notes {
   position: absolute;
-  top: 14px;
-  right: 22px;
-  padding: 2px 8px;
-  background: #2a2340;
-  color: #ffd27a;
-  font: 12px "Courier New", monospace;
-  pointer-events: none;
+  top: -6px;
+  right: 8px;
+  display: flex;
+  gap: 14px;
+  z-index: 5;
+}
+
+.sticky-note {
+  position: relative;
+  width: 200px;
+  padding: 18px 14px 14px;
+  border-radius: 6px 6px 14px 6px;
+  background: linear-gradient(180deg, #fffbe0, #fff3b8);
+  color: var(--ink);
+  font: 700 14px/1.35 var(--font-ui-stack);
+  box-shadow: 0 8px 16px rgba(80, 90, 120, 0.18);
+  transform: rotate(-2deg);
+}
+
+.sticky-note:nth-child(2) {
+  background: linear-gradient(180deg, #fde7ef, var(--pink-hi));
+  transform: rotate(2.5deg);
+}
+
+.sticky-note::before {
+  content: "";
+  position: absolute;
+  top: -8px;
+  left: 50%;
+  width: 54px;
+  height: 16px;
+  margin-left: -27px;
+  border-radius: 4px;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.85) 0 45%, rgba(255, 255, 255, 0.35) 46% 100%),
+    var(--sky-hi);
+  opacity: 0.85;
+  transform: rotate(-3deg);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+}
+
+.sticky-note.small-note {
+  width: auto;
+  transform: none;
+  font-size: 13px;
+  background: linear-gradient(180deg, #fbfdf3, #eef7da);
+}
+
+.sticky-close {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  min-height: 0;
+  width: 22px;
+  height: 22px;
+  padding: 0;
+  font-size: 14px;
+}
+
+/* Mic level meter in fog mode: a little pastel gauge. */
+.mic-meter {
+  position: relative;
+  flex: 1;
+  height: 14px;
+  border-radius: var(--radius-pill);
+  background: linear-gradient(180deg, #eef0f3, #ffffff);
+  border: 1px solid var(--pearl-lo);
+  box-shadow: inset 0 2px 3px rgba(60, 70, 90, 0.12);
+  overflow: hidden;
+}
+
+.mic-meter-fill {
+  height: 100%;
+  width: 0;
+  border-radius: var(--radius-pill);
+  background: linear-gradient(180deg, var(--sky-hi), var(--sky-lo));
+}
+
+.mic-meter-fill.blowing {
+  background: linear-gradient(180deg, var(--lime-hi), var(--lime-lo));
+}
+
+.mic-meter-threshold {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 3px;
+  margin-left: -1px;
+  border-radius: 2px;
+  background: var(--pink-edge);
 }
 
 /* ---------------------------------------------------------------- posts */
 
+.scratch-frame {
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow: 0 4px 10px rgba(80, 90, 120, 0.18), 0 0 0 3px #fff, 0 0 0 4px var(--pearl-lo);
+}
+
 .post-footer {
-  padding: 4px 0 10px;
-  border-bottom: 1px dotted #999;
+  padding: 8px 2px 14px;
+  border-bottom: 1px dashed var(--pearl-lo);
 }
 
 .post-meta {
   display: flex;
   gap: 6px;
   align-items: center;
+  flex-wrap: wrap;
 }
 
 .post-caption {
@@ -284,113 +681,311 @@ button.small {
 }
 
 .post-actions {
-  margin-top: 4px;
-  flex-wrap: wrap;
+  margin-top: 6px;
 }
 
 .badge {
-  padding: 0 4px;
-  background: #ffffe1;
-  border: 1px solid #808080;
-}
-
-.badge-night {
-  background: #2a2340;
-  color: #ffd27a;
-  border-color: #2a2340;
+  padding: 1px 8px;
+  border-radius: var(--radius-pill);
+  font-size: 11px;
+  font-weight: 800;
+  background: linear-gradient(180deg, #fff, var(--sky-hi));
+  border: 1px solid var(--sky-lo);
 }
 
 .badge-held {
-  background: #ffe1e1;
+  background: linear-gradient(180deg, #fff, var(--pink-hi));
+  border-color: var(--pink-lo);
+}
+
+.badge-night {
+  background: linear-gradient(180deg, #5d5a86, #3c3a62);
+  color: #fff2c4;
+  border-color: #3c3a62;
 }
 
 .focus-waiting {
-  padding: 6px;
-  background: #ffffe1;
-  border: 1px solid #c8c8a0;
+  padding: 8px 12px;
+  border-radius: 14px;
+  background: linear-gradient(180deg, #f6fbff, var(--sky-hi));
+  border: 1px solid var(--sky-lo);
 }
 
 .caption-chips {
   display: flex;
   flex-wrap: wrap;
   gap: 6px;
-  min-height: 24px;
+  min-height: 28px;
 }
 
 .chip {
-  min-width: 0;
-  border-radius: 10px;
+  min-height: 28px;
+  padding: 4px 14px;
+  font-size: 13px;
 }
 
 .note-ok {
-  padding: 6px;
-  background: #e6f6e6;
+  padding: 8px 12px;
+  border-radius: 14px;
+  background: linear-gradient(180deg, #fbfff4, var(--lime-hi));
+  border: 1px solid var(--lime-lo);
 }
 
 .note-held {
-  padding: 6px;
-  background: #fff0e6;
+  padding: 8px 12px;
+  border-radius: 14px;
+  background: linear-gradient(180deg, #fff8fb, var(--pink-hi));
+  border: 1px solid var(--pink-lo);
+}
+
+/* Invite code and timer: little LCD screens. */
+.invite-code,
+.timer-readout {
+  padding: 10px;
+  text-align: center;
+  border-radius: 14px;
+  background: linear-gradient(180deg, #e9f7d4, var(--lcd));
+  color: var(--lcd-ink);
+  border: 2px solid var(--chrome-lo);
+  box-shadow: inset 0 3px 6px rgba(40, 60, 20, 0.2), 0 1px 0 #fff;
 }
 
 .invite-code {
-  font: bold 28px/1 "Courier New", monospace;
-  letter-spacing: 6px;
-  padding: 8px;
-  text-align: center;
-  background: #fff;
-  box-shadow: inset -1px -1px #fff, inset 1px 1px #808080;
+  font: 800 28px/1 var(--font-ui-stack);
+  letter-spacing: 8px;
+}
+
+.timer-readout {
+  font: 800 32px/1.1 var(--font-ui-stack);
+  letter-spacing: 2px;
 }
 
 .story-paper {
-  padding: 14px 16px;
-  background: #fffdf4 repeating-linear-gradient(#fffdf4 0 21px, #d6e4f0 21px 22px);
-  font: 14px/22px Georgia, serif;
-  box-shadow: 2px 2px 0 #808080;
+  padding: 16px 18px;
+  border-radius: 16px;
+  background: #fffdf6 repeating-linear-gradient(#fffdf6 0 23px, #dbe9f6 23px 24px);
+  font: 600 15px/24px var(--font-ui-stack);
+  box-shadow: 0 4px 10px rgba(80, 90, 120, 0.15);
 }
 
 .story-paper h3 {
   margin: 0 0 8px;
+  font-size: 20px;
 }
 
 .stat-row {
   display: flex;
   flex-wrap: wrap;
-  gap: 4px 14px;
+  gap: 6px;
   padding: 0;
+  margin: 0;
   list-style: none;
 }
 
-.timer-readout {
-  font: bold 28px/1.2 "Courier New", monospace;
-  text-align: center;
+.stat-row li {
+  padding: 3px 10px;
+  border-radius: var(--radius-pill);
+  background: linear-gradient(180deg, #fff, var(--pearl));
+  border: 1px solid var(--panel-edge);
+}
+
+/* After midnight: a soft lavender-gold glow over the desk (static, no animation). */
+.monitor.late-night .desk-surface::before {
+  content: "";
+  position: absolute;
+  inset: -40px;
+  pointer-events: none;
+  background: radial-gradient(ellipse at 85% 0%, rgba(255, 200, 120, 0.35), transparent 55%);
+}
+
+.late-night-tag {
+  padding: 3px 12px;
+  border-radius: var(--radius-pill);
+  background: linear-gradient(180deg, #6a6798, #3c3a62);
+  color: #fff2c4;
+  font-weight: 800;
+  font-size: 12px;
 }
 
 /* ---------------------------------------------------------------- widget (calm) */
 
 .widget-inline {
-  padding: 6px;
-  background: #d4d0c8;
+  padding: 12px;
+  border-radius: 18px;
+  background: linear-gradient(180deg, #ffffff, var(--pearl));
+  border: 1px solid var(--panel-edge);
 }
 
-/* Floating Document PiP widget: calm, plain background. */
+/* Floating Document PiP widget: a quiet pearl panel. */
 body.pip {
   display: block;
   min-height: 0;
-  padding: 0;
-  background: #c0c0c0;
+  padding: 8px;
+  background: linear-gradient(180deg, var(--cream), var(--pearl));
 }
 
 body.pip .widget-window .window-body {
   max-height: none;
 }
 
+/* ---------------------------------------------------------------- camera gadget */
+
+/* A cute cream digital camera: the viewfinder is its screen behind a chrome bezel. */
+.camera-body {
+  position: relative;
+  padding: 34px 18px 18px;
+  border-radius: 28px;
+  background:
+    radial-gradient(ellipse at 50% -10%, rgba(255, 255, 255, 0.95), transparent 55%),
+    linear-gradient(180deg, #fffdf8 0%, var(--cream) 45%, #ece5d6 100%);
+  border: 1px solid #ddd3c0;
+  box-shadow:
+    var(--shadow-soft),
+    inset 0 2px 0 #fff,
+    inset 0 -6px 10px rgba(150, 130, 100, 0.12);
+}
+
+.camera-lens {
+  position: absolute;
+  top: 8px;
+  left: 22px;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background:
+    radial-gradient(circle at 35% 30%, rgba(255, 255, 255, 0.95) 0 14%, transparent 20%),
+    radial-gradient(circle at 50% 50%, #6b8fb8 0 30%, #2c3550 60%, #11131c 100%);
+  box-shadow: 0 0 0 3px var(--chrome-mid), 0 0 0 4px var(--chrome-edge), 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.camera-flash {
+  position: absolute;
+  top: 11px;
+  left: 56px;
+  width: 28px;
+  height: 12px;
+  border-radius: 6px;
+  background: linear-gradient(180deg, #ffffff, #e8eef5 55%, #cfd8e3);
+  border: 1px solid var(--chrome-lo);
+}
+
+.camera-label {
+  position: absolute;
+  top: 9px;
+  right: 22px;
+  font: 800 11px var(--font-display-stack);
+  letter-spacing: 2px;
+  color: #b3a78f;
+  text-transform: uppercase;
+}
+
+/* Camera viewfinder: a 4:3 screen with corner brackets. Brackets are DOM
+   overlays, so they never end up in the captured photo. */
+.viewfinder {
+  position: relative;
+  aspect-ratio: 4 / 3;
+  background: #22252e;
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow:
+    0 0 0 5px var(--chrome-mid),
+    0 0 0 6px var(--chrome-edge),
+    0 0 0 9px #fff,
+    inset 0 0 24px rgba(0, 0, 0, 0.45);
+}
+
+.viewfinder canvas {
+  width: 100%;
+  height: 100%;
+  touch-action: none;
+}
+
+/* Glossy glass reflection over the screen (never part of the photo). */
+.viewfinder::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  border-radius: inherit;
+  background: linear-gradient(160deg, rgba(255, 255, 255, 0.22) 0%, rgba(255, 255, 255, 0.05) 35%, transparent 36%);
+}
+
+/* Fog mode: condensation creeping in around the edge of the lens glass. */
+.viewfinder.lens-fog {
+  box-shadow:
+    0 0 0 5px #f6dbe6,
+    0 0 0 6px var(--pink-edge),
+    0 0 0 9px #fff,
+    inset 0 0 40px rgba(255, 255, 255, 0.25);
+}
+
+.viewfinder.lens-fog::after {
+  background:
+    radial-gradient(ellipse at 50% 50%, transparent 55%, rgba(255, 255, 255, 0.18) 80%),
+    linear-gradient(160deg, rgba(255, 255, 255, 0.22) 0%, rgba(255, 255, 255, 0.05) 35%, transparent 36%);
+}
+
+.viewfinder-empty {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 24px;
+  text-align: center;
+  color: #f2f3f7;
+  z-index: 1;
+}
+
+.viewfinder-hint {
+  max-width: 340px;
+  color: #c3c7d2;
+}
+
+.viewfinder-error {
+  max-width: 360px;
+  color: #ffc4d6;
+}
+
+.viewfinder-corner {
+  position: absolute;
+  width: 26px;
+  height: 26px;
+  border: 3px solid rgba(255, 255, 255, 0.85);
+  pointer-events: none;
+  z-index: 1;
+}
+.viewfinder-corner.tl { top: 12px; left: 12px; border-right: none; border-bottom: none; border-top-left-radius: 8px; }
+.viewfinder-corner.tr { top: 12px; right: 12px; border-left: none; border-bottom: none; border-top-right-radius: 8px; }
+.viewfinder-corner.bl { bottom: 12px; left: 12px; border-right: none; border-top: none; border-bottom-left-radius: 8px; }
+.viewfinder-corner.br { bottom: 12px; right: 12px; border-left: none; border-top: none; border-bottom-right-radius: 8px; }
+
+.preview-photo {
+  width: 100%;
+  display: block;
+  border-radius: 16px;
+  box-shadow: 0 0 0 3px #fff, 0 0 0 4px var(--pearl-lo), var(--shadow-soft);
+}
+
+/* ---------------------------------------------------------------- motion + small screens */
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    transition: none !important;
+    animation: none !important;
+  }
+  button:active:not(:disabled) {
+    transform: none;
+  }
+}
+
 @media (max-width: 760px) {
   body {
     padding: 8px;
-  }
-  .monitor-bezel {
-    padding: 18px 12px 10px;
-    border-radius: 16px;
   }
   .desktop {
     flex-direction: column;
@@ -404,75 +999,8 @@ body.pip .widget-window .window-body {
     position: static;
     margin-bottom: 8px;
   }
-}
-
-/* Camera viewfinder: a 4:3 frame with corner brackets. Brackets are DOM
-   overlays, so they never end up in the captured photo. */
-.viewfinder {
-  position: relative;
-  aspect-ratio: 4 / 3;
-  background: #111;
-  box-shadow: inset -1px -1px #fff, inset 1px 1px #808080, inset -2px -2px #dfdfdf, inset 2px 2px #0a0a0a;
-  padding: 2px;
-  overflow: hidden;
-}
-
-.viewfinder canvas {
-  width: 100%;
-  height: 100%;
-  touch-action: none;
-}
-
-.viewfinder-empty {
-  position: absolute;
-  inset: 0;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  padding: 24px;
-  text-align: center;
-  color: #eee;
-}
-
-.viewfinder-hint {
-  max-width: 320px;
-  color: #aaa;
-}
-
-.viewfinder-error {
-  max-width: 360px;
-  color: #ffb4b4;
-}
-
-.viewfinder-corner {
-  position: absolute;
-  width: 28px;
-  height: 28px;
-  border: 3px solid rgba(255, 255, 255, 0.85);
-  pointer-events: none;
-}
-.viewfinder-corner.tl { top: 12px; left: 12px; border-right: none; border-bottom: none; }
-.viewfinder-corner.tr { top: 12px; right: 12px; border-left: none; border-bottom: none; }
-.viewfinder-corner.bl { bottom: 12px; left: 12px; border-right: none; border-top: none; }
-.viewfinder-corner.br { bottom: 12px; right: 12px; border-left: none; border-top: none; }
-
-/* Fog mode: the curved glass of an old CRT, with a soft glare that stays out of the photo. */
-.viewfinder.crt-glass {
-  border-radius: 28px / 34px;
-  box-shadow:
-    0 0 0 6px #5c564b,
-    0 0 0 9px #cbbd9f,
-    inset 0 0 50px rgba(0, 0, 0, 0.55);
-}
-
-.viewfinder.crt-glass::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-  border-radius: inherit;
-  background: radial-gradient(ellipse at 30% 15%, rgba(255, 255, 255, 0.16), transparent 45%);
-  box-shadow: inset 0 0 40px rgba(0, 0, 0, 0.5);
+  .desk-bar {
+    border-radius: 22px;
+    flex-wrap: wrap;
+  }
 }

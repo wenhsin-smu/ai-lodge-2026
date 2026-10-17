@@ -299,7 +299,11 @@ export default function FogBooth({ fog, hidden = false, onCapture }: Props) {
       />
 
       {/* Viewfinder: always visible (except during preview) so it's clear where the camera goes. */}
-      <div className={fog ? "viewfinder crt-glass" : "viewfinder"}>
+      <div className="camera-body">
+        <span className="camera-lens" aria-hidden="true" />
+        <span className="camera-flash" aria-hidden="true" />
+        <span className="camera-label" aria-hidden="true">{fog ? "fog cam" : "booth cam"}</span>
+      <div className={fog ? "viewfinder lens-fog" : "viewfinder"}>
         <canvas
           ref={canvasRef}
           width={W}
@@ -316,7 +320,7 @@ export default function FogBooth({ fog, hidden = false, onCapture }: Props) {
         {!running && (
           <div className="viewfinder-empty">
             <p>Your camera will appear here.</p>
-            <button onClick={start} disabled={starting}>
+            <button className="pill-green" onClick={start} disabled={starting}>
               {starting ? "Waiting for permission..." : "Turn on camera"}
             </button>
             <p className="viewfinder-hint">
@@ -350,10 +354,13 @@ export default function FogBooth({ fog, hidden = false, onCapture }: Props) {
           }}
         />
       </div>
+      </div>
 
       {running && !fog && (
         <div className="field-row">
-          <button onClick={takePhoto}>Take photo</button>
+          <button className="pill-green" onClick={takePhoto}>
+            Take photo
+          </button>
           <input id="digicam" type="checkbox" checked={digicam} onChange={(e) => setDigicam(e.target.checked)} />
           <label htmlFor="digicam">Digicam look (grain + date stamp)</label>
         </div>
@@ -363,12 +370,9 @@ export default function FogBooth({ fog, hidden = false, onCapture }: Props) {
         <div className="stack">
           <div className="field-row">
             <span>Mic</span>
-            <div style={{ flex: 1, height: 12, background: "#fff", border: "1px solid #808080", position: "relative" }}>
-              <div ref={meterRef} style={{ height: "100%", width: 0, background: blowing ? "#2a8" : "#888" }} />
-              <div
-                style={{ position: "absolute", top: -2, bottom: -2, left: `${threshold * 100}%`, width: 2, background: "red" }}
-                title="Blow threshold"
-              />
+            <div className="mic-meter">
+              <div ref={meterRef} className={blowing ? "mic-meter-fill blowing" : "mic-meter-fill"} />
+              <div className="mic-meter-threshold" style={{ left: `${threshold * 100}%` }} title="Blow threshold" />
             </div>
             <span style={{ width: 60 }}>{blowing ? "Fogging" : ""}</span>
           </div>
@@ -411,8 +415,12 @@ export default function FogBooth({ fog, hidden = false, onCapture }: Props) {
             )}
           </fieldset>
           <div className="field-row">
-            <button onClick={clearFog}>Clear fog</button>
-            <button onClick={takePhoto}>Take photo</button>
+            <button className="pill-pink" onClick={clearFog}>
+              Clear fog
+            </button>
+            <button className="pill-green" onClick={takePhoto}>
+              Take photo
+            </button>
           </div>
         </div>
       )}

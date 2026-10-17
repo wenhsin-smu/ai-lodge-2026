@@ -52,7 +52,7 @@ export default function LoginPage() {
                     onChange={(e) => setEmail(e.target.value)}
                   />
                 </div>
-                <button type="submit" disabled={status === "sending"}>
+                <button className="pill-green" type="submit" disabled={status === "sending"}>
                   {status === "sending" ? "Sending..." : "Send magic link"}
                 </button>
                 {status === "error" && (

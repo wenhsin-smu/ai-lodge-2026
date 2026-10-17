@@ -75,6 +75,7 @@ export default function GroupWindow({ onJoined }: { onJoined?: () => void }) {
             onChange={(e) => setCode(e.target.value.toUpperCase())}
           />
           <button
+            className="pill-green"
             disabled={busy || code.trim().length !== 6}
             onClick={() =>
               run(async () => {
@@ -93,6 +94,7 @@ export default function GroupWindow({ onJoined }: { onJoined?: () => void }) {
         <div className="field-row">
           <input aria-label="Group name" value={name} maxLength={40} placeholder="Night owls" onChange={(e) => setName(e.target.value)} />
           <button
+            className="pill-green"
             disabled={busy || !name.trim()}
             onClick={() =>
               run(async () => {

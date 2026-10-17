@@ -31,7 +31,7 @@ async function Home() {
         <Welcome>
           <p>Share playful, handmade photos and notes with your study friends while you each study at home.</p>
           <Link href="/login">
-            <button>Sign in or sign up</button>
+            <button className="pill-green">Sign in or sign up</button>
           </Link>
         </Welcome>
       </Monitor>

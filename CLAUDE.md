@@ -10,7 +10,7 @@ A small always-on-top widget sits in the corner of the laptop. You fog up your w
 
 - **Next.js (App Router) + TypeScript**, deployed on **Vercel**
 - **Supabase**: auth, Postgres, Storage (private bucket), Realtime
-- **98.css** for retro windows and buttons
+- **Custom CSS** (no UI kit): glossy Y2K gadget look; colours as CSS variables in `app/globals.css`; every `<button>` is a glossy pill (`pill-green` / `pill-pink` / `pill-blue` for roles). Fonts: Nunito + Baloo 2 via `next/font`
 - **@mediapipe/tasks-vision** (HandLandmarker) for in-browser fingertip tracking
 - **Web Audio API** (AnalyserNode) for blow detection
 - **Canvas 2D** for fog, drawing and scratch-to-reveal
@@ -28,7 +28,7 @@ A small always-on-top widget sits in the corner of the laptop. You fog up your w
 - **All AI outputs are structured JSON**, validated with zod. Invalid output = treated as failure.
 - **Hand tracking runs on-device.** The live camera feed is never uploaded; only the finished post the user chooses to send.
 - **Photos are never taken automatically.** Every capture is user-initiated, with a preview before sending.
-- Keep the study widget calm: no sounds, no flashing, no infinite feed. Busy retro styling only on the home screen.
+- Keep the study widget calm: no sounds, no flashing, no infinite feed. Colourful glossy styling belongs on the home screen; the widget is a quiet pearl panel.
 - All art (icons, wallpaper, window chrome) is original. No real Windows wallpapers, logos or copied app UIs.
 - Prefer small, working increments. After each feature, make sure `npm run build` passes.
 
@@ -71,7 +71,7 @@ Check-ins are evaluated by calling `/api/checkin` from each member's open client
 1. Scaffold, Supabase client, auth, deploy to Vercel
 2. Camera capture + fog mode (blow detection, fog canvas, mouse drawing)
 3. Groups (create / join by invite code), posts upload, realtime feed, scratch to reveal
-4. Floating widget (Document PiP) with retro styling
+4. Floating widget (Document PiP)
 5. Server AI routes: moderate → caption → checkin → weekly story
 6. Hand-tracking finger writing (timeboxed: half a day; mouse fallback must keep working)
 7. Red-team suite, fixes, README

@@ -16,9 +16,9 @@ export default function NewPost() {
   return (
     <div className="stack">
       <menu role="tablist">
-        <Tab label="Photo" selected={tab === "photo"} onSelect={() => setTab("photo")} />
-        <Tab label="Fog glass" selected={tab === "fog"} onSelect={() => setTab("fog")} />
-        <Tab label="Stitched note" selected={tab === "note"} onSelect={() => setTab("note")} />
+        <Tab label="Photo" tone="green" selected={tab === "photo"} onSelect={() => setTab("photo")} />
+        <Tab label="Fog glass" tone="pink" selected={tab === "fog"} onSelect={() => setTab("fog")} />
+        <Tab label="Stitched note" tone="blue" selected={tab === "note"} onSelect={() => setTab("note")} />
       </menu>
       <div className="window" role="tabpanel">
         <div className="window-body stack">
@@ -118,7 +118,7 @@ function SendPreview({
   return (
     <div className="stack">
       {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img src={draft.image} alt="Preview of your post" style={{ width: "100%", display: "block" }} />
+      <img src={draft.image} alt="Preview of your post" className="preview-photo" />
       <div className="field-row-stacked">
         <label htmlFor="caption">Caption (optional)</label>
         <input id="caption" type="text" maxLength={140} value={caption} onChange={(e) => setCaption(e.target.value)} />
@@ -135,7 +135,7 @@ function SendPreview({
         <button onClick={onCancel} disabled={sending}>
           {draft.kind === "note" ? "Back" : "Retake"}
         </button>
-        <button onClick={send} disabled={sending || !group}>
+        <button className="pill-green" onClick={send} disabled={sending || !group}>
           {sending ? "Checking & sending..." : "Send to group"}
         </button>
       </div>
@@ -144,9 +144,19 @@ function SendPreview({
   );
 }
 
-function Tab({ label, selected, onSelect }: { label: string; selected: boolean; onSelect: () => void }) {
+function Tab({
+  label,
+  tone,
+  selected,
+  onSelect,
+}: {
+  label: string;
+  tone: "green" | "pink" | "blue";
+  selected: boolean;
+  onSelect: () => void;
+}) {
   return (
-    <li role="tab" aria-selected={selected}>
+    <li role="tab" aria-selected={selected} className={`tab-${tone}`}>
       <a
         href="#"
         onClick={(e) => {

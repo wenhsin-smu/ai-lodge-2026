@@ -17,9 +17,18 @@ function getDocumentPiP(): DocumentPiP | null {
   return (window as unknown as { documentPictureInPicture?: DocumentPiP }).documentPictureInPicture ?? null;
 }
 
-// Copies the page's styles (98.css + globals) into the PiP window.
+// Copies the page's styles and font classes into the PiP window. External sheets
+// are linked (not inlined) so relative URLs like the web fonts still resolve.
 function copyStyles(target: Document) {
+  target.documentElement.className = document.documentElement.className;
   for (const sheet of Array.from(document.styleSheets)) {
+    if (sheet.href) {
+      const link = target.createElement("link");
+      link.rel = "stylesheet";
+      link.href = sheet.href;
+      target.head.appendChild(link);
+      continue;
+    }
     try {
       const style = target.createElement("style");
       style.textContent = Array.from(sheet.cssRules)
@@ -77,7 +86,7 @@ export default function WidgetLauncher({ onNewPost }: { onNewPost: () => void })
     <div className="stack">
       {supported ? (
         <div className="field-row">
-          <button onClick={open}>{pipWindow ? "Widget is popped out" : "Pop out widget"}</button>
+          <button className="pill-blue" onClick={open}>{pipWindow ? "Widget is popped out" : "Pop out widget"}</button>
         </div>
       ) : (
         <p className="hint">Pop-out needs Chrome or Edge, so the widget lives here on the page instead.</p>
@@ -104,7 +113,9 @@ function WidgetBody({ onNewPost, inline = false }: { onNewPost: () => void; inli
       )}
       <div className={inline ? "stack" : "window-body stack"}>
         <StudyTimer />
-        <button onClick={onNewPost}>New post</button>
+        <button className="pill-green" onClick={onNewPost}>
+          New post
+        </button>
         {latestCheckin && <div className="sticky-note small-note">{latestCheckin.message}</div>}
         <PostList limit={LATEST} eraserSize={26} compact />
       </div>
@@ -143,6 +154,7 @@ export function StudyTimer() {
           <label htmlFor="focus-choice">Focus mode</label>
         </div>
         <button
+          className="pill-blue"
           onClick={() => {
             setError("");
             startStudy(minutes, focus).catch((e: Error) => setError(e.message));
@@ -168,7 +180,9 @@ export function StudyTimer() {
         <input id="focus-live" type="checkbox" checked={session.focus} onChange={(e) => setFocus(e.target.checked)} />
         <label htmlFor="focus-live">Focus mode (hide new posts)</label>
       </div>
-      <button onClick={() => void stopStudy()}>End session</button>
+      <button className="pill-blue" onClick={() => void stopStudy()}>
+        End session
+      </button>
     </fieldset>
   );
 }

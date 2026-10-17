@@ -40,7 +40,7 @@ export default function StoryWindow() {
 
   return (
     <div className="stack">
-      <button onClick={generate} disabled={loading}>
+      <button className="pill-pink" onClick={generate} disabled={loading}>
         {loading ? "Writing your story..." : "Generate this week's story"}
       </button>
       {result?.error && <p className="hint">{result.error}</p>}
