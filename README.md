@@ -46,7 +46,9 @@ AI works quietly in the background, always server-side:
 
 ## AI Integration
 
-All AI calls run in Next.js server routes (`app/api/*`, Vercel serverless functions) using the Anthropic API (`claude-opus-5-5` by default, configurable with `ANTHROPIC_MODEL`). Every response must be JSON matching a **zod** schema (structured outputs, validated again on our side); anything else counts as a failure. Server-side refusal fallbacks are enabled.
+All AI calls run in Next.js server routes (`app/api/*`, Vercel serverless functions) through the Anthropic SDK. The model, provider URL and key come only from env vars (`ANTHROPIC_MODEL`, `ANTHROPIC_BASE_URL`, `ANTHROPIC_API_KEY`), so it works with Anthropic directly or an Anthropic-compatible provider. Every response must be JSON matching a **zod** schema; we use structured outputs where the provider supports them and otherwise fall back to plain JSON instructions, validating either way. Anything else counts as a failure. Model fallback is off unless `ANTHROPIC_FALLBACK_MODELS` lists the models it may use.
+
+`npm run ai:check` makes one test call per AI feature through the running app and prints the results and any errors in full.
 
 | Feature | Route | What goes in | What comes out | When it fails |
 | --- | --- | --- | --- | --- |
@@ -91,11 +93,13 @@ You need Node.js 20+ and free Supabase and Anthropic accounts.
    | `NEXT_PUBLIC_SUPABASE_URL` | Supabase → Project Settings → API | no |
    | `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` | Supabase → API Keys → publishable (or legacy anon) | no |
    | `SUPABASE_SERVICE_ROLE_KEY` | Supabase → API Keys → secret (or legacy service_role) | **yes, server only** |
-   | `ANTHROPIC_API_KEY` | console.anthropic.com → API Keys | **yes, server only** |
-   | `ANTHROPIC_MODEL` | optional, default `claude-opus-5-5` | no |
+   | `ANTHROPIC_API_KEY` | console.anthropic.com → API Keys, or your provider's key | **yes, server only** |
+   | `ANTHROPIC_MODEL` | required: the model name, exactly as your provider lists it | no |
+   | `ANTHROPIC_BASE_URL` | optional: provider URL (e.g. `https://api.apiyi.com`); empty = Anthropic | no |
+   | `ANTHROPIC_FALLBACK_MODELS` | optional: comma-separated fallback models; empty = fallback off | no |
    | `REDTEAM_TOKEN` | any long random string; enables the red-team script | yes |
 
-5. **Run it:** `npm run dev`, then open http://localhost:3000 in Chrome or Edge.
+5. **Run it:** `npm run dev`, then open http://localhost:3000 in Chrome or Edge. Then run `npm run ai:check` in a second terminal to confirm all 4 AI features work.
 6. **Deploy:** import the repo on Vercel and add the same environment variables (Production and Preview). Vercel doesn't read `.env.local`.
 
 **Try it as two friends.** Sign in on two laptops (or two browser profiles) with two different emails. Laptop A: *My Group → Start a new group*, then share the invite code. Laptop B: *My Group → Join with a code*. Then post from one and scratch on the other.

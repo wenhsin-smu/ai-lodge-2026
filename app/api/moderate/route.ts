@@ -1,6 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { getCaller, isUuid } from "@/lib/apiAuth";
-import { aiConfigured, describeAiError } from "@/lib/ai";
+import { aiConfigured, describeAiError, fullAiError, missingAiConfig } from "@/lib/ai";
 import { moderatePost } from "@/lib/moderation";
 import { createAdminClient, hasAdminEnv } from "@/utils/supabase/admin";
 
@@ -52,7 +52,7 @@ export async function POST(request: NextRequest) {
       await admin.from("posts").update({ status: "approved", moderation_reason: "dev: moderation skipped" }).eq("id", post.id);
       return NextResponse.json({ status: "approved", message: "Sent! (moderation skipped in dev)" });
     }
-    return hold("AI moderation isn't configured", "Moderation isn't set up yet (missing ANTHROPIC_API_KEY), so your post wasn't shared.");
+    return hold(`moderation error: missing ${missingAiConfig()}`, `Moderation isn't set up yet (missing ${missingAiConfig()} on the server), so your post wasn't shared.`);
   }
 
   try {
@@ -71,7 +71,7 @@ export async function POST(request: NextRequest) {
     return hold(`${decision.category}: ${decision.reason}`, decision.reason);
   } catch (e) {
     const why = describeAiError(e);
-    console.error(`moderation failed: ${why}`, e);
+    console.error(`moderation failed: ${why}`, JSON.stringify(fullAiError(e)));
     return hold(`moderation error: ${why}`, `${HELD_ERROR} (${why})`);
   }
 }

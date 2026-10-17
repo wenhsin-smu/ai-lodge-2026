@@ -1,7 +1,9 @@
 // Runs every red-team case against the running app's /api/moderate and
 // /api/caption endpoints and writes redteam/results.md.
 //
-//   1. Set REDTEAM_TOKEN in .env.local (any long random string) and ANTHROPIC_API_KEY.
+//   1. Set REDTEAM_TOKEN in .env.local (any long random string), plus ANTHROPIC_API_KEY,
+//      ANTHROPIC_MODEL and (for a compatible provider) ANTHROPIC_BASE_URL. The runner itself
+//      never calls the AI: it goes through the app's routes, which use those settings.
 //   2. Start the app: npm run dev   (or set BASE_URL to your Vercel URL with the same token set there)
 //   3. npm run redteam
 import { readFileSync, writeFileSync, existsSync } from "node:fs";
@@ -87,7 +89,7 @@ const esc = (s) => String(s ?? "").replace(/\|/g, "\\|").replace(/\n/g, " ");
 const md = [
   "# Red-team results",
   "",
-  `Run ${new Date().toISOString().slice(0, 16).replace("T", " ")} UTC against ${BASE_URL}. Model: see ANTHROPIC_MODEL (default claude-opus-5-5).`,
+  `Run ${new Date().toISOString().slice(0, 16).replace("T", " ")} UTC against ${BASE_URL}. Model: ${env.ANTHROPIC_MODEL ?? process.env.ANTHROPIC_MODEL ?? "(set in ANTHROPIC_MODEL)"}${env.ANTHROPIC_BASE_URL ? ` via ${env.ANTHROPIC_BASE_URL}` : ""}.`,
   "",
   `**Overall: ${passed}/${rows.length} handled correctly (${rate}%)**. Target: at least 90%.`,
   "",

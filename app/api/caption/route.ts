@@ -1,6 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { getCaller, isMember, isUuid } from "@/lib/apiAuth";
-import { aiConfigured } from "@/lib/ai";
+import { aiConfigured, fullAiError } from "@/lib/ai";
 import { suggestCaptions } from "@/lib/captions";
 
 export const maxDuration = 15;
@@ -63,7 +63,7 @@ export async function POST(request: NextRequest) {
     const suggestions = await suggestCaptions({ imageBase64: body.image, minutesStudied, localTime, recentCaptions, timeoutMs: TIMEOUT_MS });
     return NextResponse.json({ suggestions });
   } catch (e) {
-    console.warn("captions unavailable", String(e));
+    console.warn("captions unavailable", JSON.stringify(fullAiError(e)));
     return NextResponse.json({ suggestions: [] });
   }
 }
