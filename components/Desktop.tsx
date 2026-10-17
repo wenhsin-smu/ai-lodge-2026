@@ -75,6 +75,7 @@ export default function Desktop({ email }: { email: string }) {
     return () => window.removeEventListener("keydown", onKey);
   }, [forceCheckin]);
 
+  const lateNight = useSyncExternalStore(subscribeMinute, isLateNight, () => false);
   const notes = checkins.filter((c) => !dismissed.has(c.id)).slice(0, 2);
 
   const windows: Record<WindowId, { title: string; body: React.ReactNode; wide?: boolean }> = {
@@ -102,6 +103,7 @@ export default function Desktop({ email }: { email: string }) {
 
   return (
     <Monitor
+      lateNight={lateNight}
       notes={notes.map((n) => (
         <div key={n.id} className="sticky-note">
           <button className="sticky-close" aria-label="Dismiss note" onClick={() => setDismissed((s) => new Set(s).add(n.id))}>
@@ -174,6 +176,7 @@ const subscribeMinute = (onChange: () => void) => {
   const t = window.setInterval(onChange, 15_000);
   return () => window.clearInterval(t);
 };
+const isLateNight = () => new Date().getHours() < 4;
 const readClock = () => new Date().toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
 
 function Clock({ onDoubleClick, status }: { onDoubleClick: () => void; status: string }) {

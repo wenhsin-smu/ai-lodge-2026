@@ -49,6 +49,7 @@ export default function FogBooth({ fog, hidden = false, onCapture }: Props) {
   const [mode, setMode] = useState<Mode>("mouse");
   const [handStatus, setHandStatus] = useState<"off" | "loading" | "ready" | "error">("off");
   const [blowing, setBlowing] = useState(false);
+  const [digicam, setDigicam] = useState(false);
 
   useEffect(() => {
     thresholdRef.current = threshold;
@@ -283,7 +284,8 @@ export default function FogBooth({ fog, hidden = false, onCapture }: Props) {
   function takePhoto() {
     const canvas = canvasRef.current;
     if (!canvas) return;
-    onCapture(canvas.toDataURL("image/jpeg", 0.85), fog && fogUsedRef.current ? "fog" : "photo");
+    const source = !fog && digicam ? digicamFilter(canvas) : canvas;
+    onCapture(source.toDataURL("image/jpeg", 0.85), fog && fogUsedRef.current ? "fog" : "photo");
   }
 
   return (
@@ -352,6 +354,8 @@ export default function FogBooth({ fog, hidden = false, onCapture }: Props) {
       {running && !fog && (
         <div className="field-row">
           <button onClick={takePhoto}>Take photo</button>
+          <input id="digicam" type="checkbox" checked={digicam} onChange={(e) => setDigicam(e.target.checked)} />
+          <label htmlFor="digicam">Digicam look (grain + date stamp)</label>
         </div>
       )}
 
@@ -428,4 +432,40 @@ function wipe(ctx: CanvasRenderingContext2D, from: Point, to: Point) {
   ctx.lineTo(to.x === from.x && to.y === from.y ? to.x + 0.1 : to.x, to.y);
   ctx.stroke();
   ctx.globalCompositeOperation = "source-over";
+}
+
+/** Early-2000s digital camera look: warm tint, grain, soft vignette, orange date stamp. */
+function digicamFilter(source: HTMLCanvasElement) {
+  const out = document.createElement("canvas");
+  out.width = W;
+  out.height = H;
+  const ctx = out.getContext("2d")!;
+  ctx.filter = "saturate(1.25) contrast(1.08) sepia(0.15)";
+  ctx.drawImage(source, 0, 0);
+  ctx.filter = "none";
+
+  const img = ctx.getImageData(0, 0, W, H);
+  for (let i = 0; i < img.data.length; i += 4) {
+    const n = (Math.random() - 0.5) * 34;
+    img.data[i] = Math.min(255, Math.max(0, img.data[i] + n + 6));
+    img.data[i + 1] = Math.min(255, Math.max(0, img.data[i + 1] + n));
+    img.data[i + 2] = Math.min(255, Math.max(0, img.data[i + 2] + n - 6));
+  }
+  ctx.putImageData(img, 0, 0);
+
+  const v = ctx.createRadialGradient(W / 2, H / 2, H * 0.35, W / 2, H / 2, H * 0.85);
+  v.addColorStop(0, "rgba(0,0,0,0)");
+  v.addColorStop(1, "rgba(0,0,0,0.35)");
+  ctx.fillStyle = v;
+  ctx.fillRect(0, 0, W, H);
+
+  const d = new Date();
+  const stamp = `'${String(d.getFullYear()).slice(2)} ${String(d.getMonth() + 1).padStart(2, " ")} ${String(d.getDate()).padStart(2, " ")}`;
+  ctx.font = "bold 30px 'Courier New', monospace";
+  ctx.textAlign = "right";
+  ctx.shadowColor = "rgba(255,120,0,0.9)";
+  ctx.shadowBlur = 6;
+  ctx.fillStyle = "#ff9a1f";
+  ctx.fillText(stamp, W - 26, H - 26);
+  return out;
 }

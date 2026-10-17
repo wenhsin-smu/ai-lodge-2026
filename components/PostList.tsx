@@ -67,6 +67,7 @@ function PostFooter({ post, mine, covered, compact }: { post: Post; mine: boolea
     <div className="post-footer">
       <div className="post-meta">
         <b>{nameOf(post.user_id)}</b> <span className="hint">{time}</span>
+        {new Date(post.created_at).getHours() < 4 && <span className="badge badge-night">still up?</span>}
         {mine && post.status === "pending" && <span className="badge">checking...</span>}
         {mine && post.status === "held" && <span className="badge badge-held">not shared</span>}
       </div>

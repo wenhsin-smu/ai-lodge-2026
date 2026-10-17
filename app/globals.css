@@ -248,6 +248,24 @@ button.small {
   max-width: none;
 }
 
+/* After midnight: a warm lamp glow over the screen (static, no animation). */
+.monitor-screen.late-night .screen-glare {
+  background:
+    radial-gradient(ellipse at 80% 0%, rgba(255, 170, 70, 0.22), transparent 55%),
+    repeating-linear-gradient(0deg, rgba(0, 0, 0, 0.04) 0 1px, transparent 1px 3px);
+}
+
+.late-night-tag {
+  position: absolute;
+  top: 14px;
+  right: 22px;
+  padding: 2px 8px;
+  background: #2a2340;
+  color: #ffd27a;
+  font: 12px "Courier New", monospace;
+  pointer-events: none;
+}
+
 /* ---------------------------------------------------------------- posts */
 
 .post-footer {
@@ -274,6 +292,12 @@ button.small {
   padding: 0 4px;
   background: #ffffe1;
   border: 1px solid #808080;
+}
+
+.badge-night {
+  background: #2a2340;
+  color: #ffd27a;
+  border-color: #2a2340;
 }
 
 .badge-held {

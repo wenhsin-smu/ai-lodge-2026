@@ -35,11 +35,13 @@ AI works quietly in the background, always server-side:
   - **Photo:** a normal webcam snapshot.
   - **Fog glass:** blow into the mic to fog the curved glass of an old CRT, then write in it with your **finger** (on-device hand tracking) or the mouse.
   - **Stitched note:** type a note and watch a needle embroider it onto fabric.
+  - **Digicam look** (optional on photos): grain, warm tone and an orange date stamp, like an early-2000s camera.
 - **Scratch to reveal.** Friends' posts arrive covered in silver foil; scratch about 60% (adjustable eraser) and the rest reveals itself. Reveals are saved per person.
 - **Live.** New posts appear on friends' screens within seconds (Supabase Realtime, with a polling fallback).
 - **Calm study widget.** Pops out as an always-on-top mini window in Chrome/Edge (falls back to an in-page panel elsewhere). It shows only the last 3 posts from the last 24 hours, has no sounds or flashing, and includes a **study timer** with **focus mode**, which hides new posts until the timer ends.
 - **Study sessions** are recorded (start, end, heartbeat) and power captions, check-ins and the weekly story.
 - **Safety tools.** Report button on every friend's post (hides it for you), delete your own posts, posts vanish from the widget after 24 hours.
+- **Late-night glow.** After midnight the screen takes on a warm lamp glow, and posts made then get a "still up?" tag.
 - **Retro, original look.** Beige CRT monitor, pixel icons (New Post, Friends' Posts, My Group, Weekly Story, Study Widget), sticky notes on the bezel for check-ins. All art is drawn for this project.
 
 ## AI Integration
