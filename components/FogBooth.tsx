@@ -1,7 +1,8 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { createBlowDetector, type BlowDetector } from "@/lib/blowDetector";
+import { FingerPen, PEN, type Pt } from "@/lib/fingerPen";
 import { createHandTracker, type HandTracker } from "@/lib/handTracker";
 
 const W = 640;
@@ -9,9 +10,17 @@ const H = 480;
 const WIPE_WIDTH = 22;
 // Blowing must stay above the threshold this long before fog starts forming.
 const SUSTAIN_MS = 200;
-// Frames a pose must hold before finger writing starts or stops (reduces flicker).
-const POSE_FRAMES = 3;
-const SMOOTHING = 0.35;
+// Average brightness (0-255) below which hand tracking gets unreliable.
+const DARK_LUMA = 55;
+const HINT_KEY = "studybooth.pinchHintSeen";
+const noSubscribe = () => () => {};
+const readDebugFlag = () => new URLSearchParams(window.location.search).has("debug");
+
+// Hand skeleton for the debug overlay.
+const BONES = [
+  [0, 1], [1, 2], [2, 3], [3, 4], [0, 5], [5, 6], [6, 7], [7, 8], [5, 9], [9, 10], [10, 11], [11, 12],
+  [9, 13], [13, 14], [14, 15], [15, 16], [13, 17], [17, 18], [18, 19], [19, 20], [0, 17],
+];
 
 type Mode = "mouse" | "finger";
 type Point = { x: number; y: number };
@@ -29,6 +38,8 @@ export default function FogBooth({ fog, hidden = false, onCapture }: Props) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const cursorRef = useRef<HTMLDivElement>(null);
   const meterRef = useRef<HTMLDivElement>(null);
+  const debugCanvasRef = useRef<HTMLCanvasElement>(null);
+  const debugTextRef = useRef<HTMLPreElement>(null);
 
   // Offscreen canvases: the fog mask (alpha = fog density) and the blurred layer.
   const fogRef = useRef<HTMLCanvasElement | null>(null);
@@ -49,6 +60,9 @@ export default function FogBooth({ fog, hidden = false, onCapture }: Props) {
   const [mode, setMode] = useState<Mode>("mouse");
   const [handStatus, setHandStatus] = useState<"off" | "loading" | "ready" | "error">("off");
   const [blowing, setBlowing] = useState(false);
+  const [tooDark, setTooDark] = useState(false);
+  const [showHint, setShowHint] = useState(false);
+  const debug = useSyncExternalStore(noSubscribe, readDebugFlag, () => false);
   const [digicam, setDigicam] = useState(false);
 
   useEffect(() => {
@@ -121,12 +135,6 @@ export default function FogBooth({ fog, hidden = false, onCapture }: Props) {
     let aboveSince: number | null = null;
     let wasBlowing = false;
     let lastMeterUpdate = 0;
-    let lastVideoTime = -1;
-    let smoothed: Point | null = null;
-    let lastFingerPoint: Point | null = null;
-    let poseCount = 0;
-    let drawingWithFinger = false;
-
     const tick = (now: number) => {
       // 1. Blow detection.
       const level = blowRef.current?.read() ?? 0;
@@ -156,47 +164,6 @@ export default function FogBooth({ fog, hidden = false, onCapture }: Props) {
         fogCtx.fillRect(0, 0, W, H);
       }
 
-      // 3. Finger writing.
-      if (modeRef.current === "finger" && handRef.current && video.currentTime !== lastVideoTime) {
-        lastVideoTime = video.currentTime;
-        const hand = handRef.current.detect(video, now);
-        if (hand) {
-          // Mirror x to match the selfie view.
-          const target = { x: (1 - hand.x) * W, y: hand.y * H };
-          smoothed = smoothed
-            ? {
-                x: smoothed.x + (target.x - smoothed.x) * SMOOTHING,
-                y: smoothed.y + (target.y - smoothed.y) * SMOOTHING,
-              }
-            : target;
-
-          if (hand.pointing !== drawingWithFinger) {
-            poseCount++;
-            if (poseCount >= POSE_FRAMES) {
-              drawingWithFinger = hand.pointing;
-              poseCount = 0;
-              lastFingerPoint = null;
-            }
-          } else {
-            poseCount = 0;
-          }
-
-          if (drawingWithFinger) {
-            wipe(fogCtx, lastFingerPoint ?? smoothed, smoothed);
-            lastFingerPoint = smoothed;
-          }
-          showCursor(smoothed, drawingWithFinger);
-        } else {
-          smoothed = null;
-          lastFingerPoint = null;
-          drawingWithFinger = false;
-          poseCount = 0;
-          showCursor(null, false);
-        }
-      } else if (modeRef.current !== "finger") {
-        showCursor(null, false);
-      }
-
       // 4. Composite: mirrored video, then a blurred, frosted copy masked by the fog.
       ctx.save();
       ctx.translate(W, 0);
@@ -222,7 +189,81 @@ export default function FogBooth({ fog, hidden = false, onCapture }: Props) {
       frame = requestAnimationFrame(tick);
     };
 
-    const showCursor = (p: Point | null, active: boolean) => {
+    frame = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(frame);
+  }, [running]);
+
+  // Finger writing: hand detection runs only while fog mode is open and finger mode is on.
+  const fingerActive = running && fog && !hidden && mode === "finger" && handStatus === "ready";
+  useEffect(() => {
+    if (!fingerActive) return;
+    const video = videoRef.current!;
+    const tracker = handRef.current!;
+    const fogCtx = fogRef.current!.getContext("2d")!;
+    const pen = new FingerPen(W, H);
+    const cursor = cursorRef.current;
+    const lumaCanvas = document.createElement("canvas");
+    lumaCanvas.width = 32;
+    lumaCanvas.height = 24;
+    const lumaCtx = lumaCanvas.getContext("2d", { willReadFrequently: true })!;
+    let stopped = false;
+    let handle = 0;
+    let frames = 0;
+    let fps = 0;
+    let fpsSince = performance.now();
+    let lastLumaCheck = 0;
+    let dark = false;
+    let luma = 0;
+    let score = 0;
+
+    const useVfc = "requestVideoFrameCallback" in video;
+    const schedule = () => {
+      if (stopped) return;
+      handle = useVfc ? video.requestVideoFrameCallback(onFrame) : requestAnimationFrame(() => onFrame(performance.now()));
+    };
+
+    const onFrame = (now: number) => {
+      if (stopped) return;
+      const reading = tracker.detect(video, now);
+      score = reading?.score ?? 0;
+      for (const ev of pen.update(reading?.landmarks ?? null, now)) {
+        if (ev.type === "stroke") wipeCurve(fogCtx, ev.from, ev.ctrl, ev.to);
+      }
+      moveCursor(pen.debug.handVisible ? pen.debug.point : null, pen.debug.down);
+
+      frames++;
+      if (now - fpsSince >= 1000) {
+        fps = (frames * 1000) / (now - fpsSince);
+        frames = 0;
+        fpsSince = now;
+      }
+      if (now - lastLumaCheck > 1000) {
+        lastLumaCheck = now;
+        lumaCtx.drawImage(video, 0, 0, 32, 24);
+        const px = lumaCtx.getImageData(0, 0, 32, 24).data;
+        let sum = 0;
+        for (let i = 0; i < px.length; i += 4) sum += 0.299 * px[i] + 0.587 * px[i + 1] + 0.114 * px[i + 2];
+        luma = sum / (px.length / 4);
+        if (luma < DARK_LUMA !== dark) {
+          dark = luma < DARK_LUMA;
+          setTooDark(dark);
+        }
+      }
+      if (debugCanvasRef.current) drawDebug(debugCanvasRef.current, reading?.landmarks ?? null, pen.debug.point, pen.debug.down);
+      if (debugTextRef.current) {
+        const d = pen.debug;
+        debugTextRef.current.textContent = [
+          `detector ${tracker.backend} · ${fps.toFixed(0)} fps · ${useVfc ? "videoFrameCallback" : "rAF"}`,
+          `hand ${d.handVisible ? `yes (conf ${score.toFixed(2)})` : Number.isFinite(d.lostForMs) ? `no (lost ${d.lostForMs} ms)` : "not seen yet"}`,
+          `pinch ${d.ratio === null ? "-" : d.ratio.toFixed(2)}  (down < ${PEN.downRatio}, up > ${PEN.upRatio})`,
+          `pen ${d.down ? "DOWN (writing)" : "up"}`,
+          `brightness ${luma.toFixed(0)}${luma < DARK_LUMA ? " (too dark)" : ""}`,
+        ].join("\n");
+      }
+      schedule();
+    };
+
+    const moveCursor = (p: Pt | null, down: boolean) => {
       const el = cursorRef.current;
       if (!el) return;
       if (!p) {
@@ -232,12 +273,33 @@ export default function FogBooth({ fog, hidden = false, onCapture }: Props) {
       el.style.display = "block";
       el.style.left = `${(p.x / W) * 100}%`;
       el.style.top = `${(p.y / H) * 100}%`;
-      el.style.background = active ? "rgba(0,128,255,0.8)" : "rgba(255,255,255,0.6)";
+      el.classList.toggle("down", down);
     };
 
-    frame = requestAnimationFrame(tick);
-    return () => cancelAnimationFrame(frame);
-  }, [running]);
+    schedule();
+    return () => {
+      stopped = true;
+      if (useVfc) video.cancelVideoFrameCallback(handle);
+      else cancelAnimationFrame(handle);
+      if (cursor) cursor.style.display = "none";
+      setTooDark(false);
+    };
+  }, [fingerActive]);
+
+  // One-time hint the first time finger writing starts.
+  useEffect(() => {
+    if (!fingerActive) return;
+    let seen = false;
+    try {
+      seen = window.localStorage.getItem(HINT_KEY) === "1";
+      window.localStorage.setItem(HINT_KEY, "1");
+    } catch {}
+    if (seen) return;
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- reacting to finger mode starting
+    setShowHint(true);
+    const t = window.setTimeout(() => setShowHint(false), 7000);
+    return () => window.clearTimeout(t);
+  }, [fingerActive]);
 
   // Load the hand tracker the first time finger mode is turned on.
   async function chooseMode(next: Mode) {
@@ -339,20 +401,19 @@ export default function FogBooth({ fog, hidden = false, onCapture }: Props) {
         <span className="viewfinder-corner tr" />
         <span className="viewfinder-corner bl" />
         <span className="viewfinder-corner br" />
-        <div
-          ref={cursorRef}
-          style={{
-            position: "absolute",
-            width: 14,
-            height: 14,
-            marginLeft: -7,
-            marginTop: -7,
-            borderRadius: "50%",
-            border: "2px solid white",
-            pointerEvents: "none",
-            display: "none",
-          }}
-        />
+        <div ref={cursorRef} className="pen-cursor" aria-hidden="true" />
+        {debug && fingerActive && (
+          <>
+            <canvas ref={debugCanvasRef} width={W} height={H} className="debug-overlay" />
+            <pre ref={debugTextRef} className="debug-readout" />
+          </>
+        )}
+        {fingerActive && showHint && (
+          <button type="button" className="pen-hint" onClick={() => setShowHint(false)}>
+            Pinch to write, open your hand to lift ✋
+          </button>
+        )}
+        {fingerActive && tooDark && <div className="dark-warning">It&apos;s a bit dark: turn on a light so finger tracking can see your hand.</div>}
       </div>
       </div>
 
@@ -388,32 +449,32 @@ export default function FogBooth({ fog, hidden = false, onCapture }: Props) {
               onChange={(e) => setThreshold(Number(e.target.value))}
             />
           </div>
-          <fieldset>
-            <legend>Write with</legend>
-            <div className="field-row">
-              <input
-                id="mode-mouse"
-                type="radio"
-                name="mode"
-                checked={mode === "mouse"}
-                onChange={() => chooseMode("mouse")}
-              />
-              <label htmlFor="mode-mouse">Mouse</label>
-              <input
-                id="mode-finger"
-                type="radio"
-                name="mode"
-                checked={mode === "finger"}
-                onChange={() => chooseMode("finger")}
-              />
-              <label htmlFor="mode-finger">Finger</label>
+          <div className="field-row">
+            <span>Write with</span>
+            <div className="pill-toggle" role="radiogroup" aria-label="Write with">
+              <button
+                role="radio"
+                aria-checked={mode === "mouse"}
+                className={mode === "mouse" ? "pill-blue" : ""}
+                onClick={() => chooseMode("mouse")}
+              >
+                Mouse / trackpad
+              </button>
+              <button
+                role="radio"
+                aria-checked={mode === "finger"}
+                className={mode === "finger" ? "pill-blue" : ""}
+                onClick={() => chooseMode("finger")}
+              >
+                Finger (pinch)
+              </button>
             </div>
-            {handStatus === "loading" && <p>Loading hand tracking...</p>}
-            {handStatus === "error" && <p role="alert">Hand tracking couldn&apos;t load. Mouse still works.</p>}
-            {mode === "finger" && handStatus === "ready" && (
-              <p>Point with only your index finger to write. Open your hand to move without writing.</p>
-            )}
-          </fieldset>
+          </div>
+          {handStatus === "loading" && <p className="hint">Loading hand tracking…</p>}
+          {handStatus === "error" && <p role="alert">Hand tracking couldn&apos;t load. Mouse and trackpad still work.</p>}
+          {mode === "finger" && handStatus === "ready" && (
+            <p className="hint">Pinch your thumb and index finger together to write; open your hand to lift the pen. Keep your hand in the middle of the camera view.</p>
+          )}
           <div className="field-row">
             <button className="pill-pink" onClick={clearFog}>
               Clear fog
@@ -476,4 +537,62 @@ function digicamFilter(source: HTMLCanvasElement) {
   ctx.fillStyle = "#ff9a1f";
   ctx.fillText(stamp, W - 26, H - 26);
   return out;
+}
+
+/** Wipes a smooth quadratic curve through the fog (finger strokes). */
+function wipeCurve(ctx: CanvasRenderingContext2D, from: Pt, ctrl: Pt, to: Pt) {
+  ctx.globalCompositeOperation = "destination-out";
+  ctx.strokeStyle = "rgba(0,0,0,1)";
+  ctx.lineWidth = WIPE_WIDTH;
+  ctx.lineCap = "round";
+  ctx.lineJoin = "round";
+  ctx.beginPath();
+  ctx.moveTo(from.x, from.y);
+  ctx.quadraticCurveTo(ctrl.x, ctrl.y, to.x === from.x && to.y === from.y ? to.x + 0.1 : to.x, to.y);
+  ctx.stroke();
+  ctx.globalCompositeOperation = "source-over";
+}
+
+/** Debug overlay: hand skeleton (mirrored camera view), active region, pen point. */
+function drawDebug(canvas: HTMLCanvasElement, lm: { x: number; y: number }[] | null, pen: Pt | null, down: boolean) {
+  const ctx = canvas.getContext("2d")!;
+  ctx.clearRect(0, 0, W, H);
+  const m = ((1 - PEN.activeRegion) / 2) * W;
+  const mh = ((1 - PEN.activeRegion) / 2) * H;
+  ctx.setLineDash([6, 6]);
+  ctx.strokeStyle = "rgba(255,255,255,0.7)";
+  ctx.lineWidth = 1.5;
+  ctx.strokeRect(m, mh, W - 2 * m, H - 2 * mh);
+  ctx.setLineDash([]);
+  if (lm) {
+    const at = (i: number) => ({ x: (1 - lm[i].x) * W, y: lm[i].y * H });
+    ctx.strokeStyle = "rgba(148,200,238,0.9)";
+    ctx.lineWidth = 2;
+    for (const [a, b] of BONES) {
+      ctx.beginPath();
+      ctx.moveTo(at(a).x, at(a).y);
+      ctx.lineTo(at(b).x, at(b).y);
+      ctx.stroke();
+    }
+    lm.forEach((_, i) => {
+      const p = at(i);
+      ctx.fillStyle = i === 4 || i === 8 ? "#efa3bf" : "#ffffff";
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, i === 4 || i === 8 ? 5 : 3, 0, Math.PI * 2);
+      ctx.fill();
+    });
+    ctx.strokeStyle = "#efa3bf";
+    ctx.beginPath();
+    ctx.moveTo(at(4).x, at(4).y);
+    ctx.lineTo(at(8).x, at(8).y);
+    ctx.stroke();
+  }
+  if (pen) {
+    ctx.fillStyle = down ? "#cf6f95" : "rgba(255,255,255,0.9)";
+    ctx.strokeStyle = "#3a3a40";
+    ctx.beginPath();
+    ctx.arc(pen.x, pen.y, 7, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.stroke();
+  }
 }

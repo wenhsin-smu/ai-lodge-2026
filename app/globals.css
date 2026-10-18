@@ -969,6 +969,100 @@ body.pip .widget-window .window-body {
   box-shadow: 0 0 0 3px #fff, 0 0 0 4px var(--pearl-lo), var(--shadow-soft);
 }
 
+/* ---------------------------------------------------------------- finger writing */
+
+/* Pen cursor: hollow ring when the pen is up, filled pink dot with a glow when writing. */
+.pen-cursor {
+  position: absolute;
+  display: none;
+  width: 22px;
+  height: 22px;
+  margin: -11px 0 0 -11px;
+  border-radius: 50%;
+  border: 3px solid #ffffff;
+  background: rgba(255, 255, 255, 0.15);
+  box-shadow: 0 0 0 1px rgba(58, 58, 64, 0.5), 0 2px 6px rgba(0, 0, 0, 0.3);
+  pointer-events: none;
+  z-index: 3;
+  transition: width 0.08s, height 0.08s, margin 0.08s;
+}
+
+.pen-cursor.down {
+  width: 16px;
+  height: 16px;
+  margin: -8px 0 0 -8px;
+  border-color: #fff;
+  background: var(--pink-edge);
+  box-shadow: 0 0 0 4px rgba(239, 163, 191, 0.55), 0 0 14px rgba(239, 163, 191, 0.9);
+}
+
+.debug-overlay {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 2;
+}
+
+.debug-readout {
+  position: absolute;
+  left: 10px;
+  bottom: 10px;
+  margin: 0;
+  padding: 6px 10px;
+  border-radius: 10px;
+  background: rgba(20, 22, 30, 0.72);
+  color: #e9f6ff;
+  font: 600 11px/1.45 ui-monospace, SFMono-Regular, Menlo, monospace;
+  pointer-events: none;
+  z-index: 4;
+  white-space: pre;
+}
+
+.pen-hint,
+.dark-warning {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 4;
+  max-width: 85%;
+  text-align: center;
+}
+
+.pen-hint {
+  top: 14px;
+}
+
+.dark-warning {
+  bottom: 14px;
+  padding: 6px 14px;
+  border-radius: 14px;
+  background: linear-gradient(180deg, #fffbe0, #fff0b0);
+  border: 1px solid #e6cf6a;
+  font-weight: 700;
+}
+
+.pill-toggle {
+  display: inline-flex;
+  gap: 4px;
+  padding: 3px;
+  border-radius: var(--radius-pill);
+  background: var(--pearl);
+  border: 1px solid var(--pearl-lo);
+  box-shadow: inset 0 2px 3px rgba(60, 70, 90, 0.1);
+}
+
+.pill-toggle button[aria-checked="false"] {
+  background: transparent;
+  border-color: transparent;
+  box-shadow: none;
+}
+
+.pill-toggle button[aria-checked="false"]::after {
+  display: none;
+}
+
 /* ---------------------------------------------------------------- motion + small screens */
 
 @media (prefers-reduced-motion: reduce) {
