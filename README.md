@@ -33,9 +33,9 @@ AI works quietly in the background, always server-side:
 - **Private friend groups.** Email magic-link sign-in, groups with 6-character invite codes, no public profiles. Row Level Security on every table and the storage bucket.
 - **Three ways to post** (always user-initiated, always with a preview and a retake button):
   - **Photo:** a normal webcam snapshot.
-  - **Fog glass:** blow into the mic to fog the lens glass of the little booth camera, then write in it with your **finger** (on-device hand tracking) or the mouse.
-  - **Stitched note:** type a note and watch a needle embroider it onto fabric.
-  - **Digicam look** (optional on photos): grain, warm tone and an orange date stamp, like an early-2000s camera.
+  - **Fog glass:** blow into the mic to fog the lens glass of the little booth camera, then write in it with your **finger** or the mouse/trackpad. Finger writing runs entirely on-device: **pinch** thumb and index finger to write, open your hand to lift the pen. The fingertip is smoothed with a One Euro filter, strokes are drawn as smooth curves, and only the middle 70% of the camera view is needed. Add `?debug=1` to the URL to see the hand landmarks, pen state, FPS and confidence.
+  - **Stitched note:** type a note and watch a needle backstitch it onto linen in about two seconds, thread by thread, inside a wooden embroidery frame.
+  - **Photo filters**, previewed live before you shoot: None, **Digicam** (soft compact-camera look, hot highlights, colour fringing, grain and an orange seven-segment date stamp), **Film** (warm, faded) and **B&W**. A quick white flash plays when you take the photo, and your last filter is remembered.
 - **Scratch to reveal.** Friends' posts arrive covered in silver foil; scratch about 60% (adjustable eraser) and the rest reveals itself. Reveals are saved per person.
 - **Live.** New posts appear on friends' screens within seconds (Supabase Realtime, with a polling fallback).
 - **Calm study widget.** Pops out as an always-on-top mini window in Chrome/Edge (falls back to an in-page panel elsewhere). It shows only the last 3 posts from the last 24 hours, has no sounds or flashing, and includes a **study timer** with **focus mode**, which hides new posts until the timer ends.
@@ -128,7 +128,13 @@ You need Node.js 20+ and free Supabase and Anthropic accounts.
 
 ### Known limitations
 
-- **Hand tracking** struggles in dim light, against busy backgrounds, and when the hand is partly out of frame. Very fast movements can break a stroke. Mouse/trackpad writing is always available as a fallback.
+- **Finger writing (hand tracking)** works best with one hand, palm towards the camera, in good light, inside the middle of the frame. Known limits:
+  - Dim rooms (the app warns "too dark"), strong backlight from a window behind you, and busy backgrounds lower detection confidence.
+  - The pinch is judged from 2D landmarks, so a hand turned side-on, or thumb and finger hidden behind each other, can read as a pinch (or miss one). Hold your hand flat to the camera.
+  - Very fast movement is smoothed and can cut corners; if the hand is lost for more than about 150 ms, the stroke ends.
+  - Older laptops without GPU acceleration run detection on the CPU at a lower frame rate (check `?debug=1`).
+  - The hand model downloads (~8 MB) the first time finger mode is turned on.
+  - Mouse/trackpad writing is always available as a fallback.
 - **Blow detection** uses mic loudness below ~500 Hz, so loud fans, wind or a bass-heavy room can trigger fog. Each laptop may need the threshold slider adjusted.
 - **Moderation is not perfect.** Sarcasm, slang and inside jokes are hard; we bias toward allowing friendly readings, which means some subtle meanness may get through (hence the report button). Messy handwriting can be misread.
 - **Captions and check-ins depend on a network AI call.** On slow connections captions are often skipped (by design).
