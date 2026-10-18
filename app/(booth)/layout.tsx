@@ -1,10 +1,9 @@
 import { Suspense } from "react";
-import Link from "next/link";
 import { cookies } from "next/headers";
 import { connection } from "next/server";
 import { BoothProvider } from "@/components/BoothProvider";
 import AppShell from "@/components/AppShell";
-import Monitor from "@/components/Monitor";
+import Landing from "@/components/Landing";
 import { hasSupabaseEnv } from "@/utils/supabase/env";
 import { createClient } from "@/utils/supabase/server";
 
@@ -13,11 +12,15 @@ import { createClient } from "@/utils/supabase/server";
 async function Gate({ children }: { children: React.ReactNode }) {
   if (!hasSupabaseEnv) {
     return (
-      <Monitor>
-        <Welcome>
-          <p>Supabase keys are missing from .env.local. See README.md → Installation &amp; Setup.</p>
-        </Welcome>
-      </Monitor>
+      <Landing
+        notice={
+          <section className="window auth-card">
+            <div className="window-body">
+              <p>Supabase keys are missing from .env.local. See README.md → Installation &amp; Setup.</p>
+            </div>
+          </section>
+        }
+      />
     );
   }
   // Render at request time: Supabase reads the clock to check session expiry.
@@ -27,18 +30,7 @@ async function Gate({ children }: { children: React.ReactNode }) {
     data: { user },
   } = await supabase.auth.getUser();
 
-  if (!user) {
-    return (
-      <Monitor>
-        <Welcome>
-          <p>Share playful, handmade photos and notes with your study friends while you each study at home.</p>
-          <Link href="/login">
-            <button className="pill-green">Sign in or sign up</button>
-          </Link>
-        </Welcome>
-      </Monitor>
-    );
-  }
+  if (!user) return <Landing />;
 
   return (
     <BoothProvider userId={user.id}>
@@ -47,27 +39,9 @@ async function Gate({ children }: { children: React.ReactNode }) {
   );
 }
 
-function Welcome({ children }: { children: React.ReactNode }) {
-  return (
-    <div className="desktop-windows">
-      <section className="window app-window">
-        <div className="title-bar">
-          <div className="title-bar-text">Welcome to Study Booth</div>
-        </div>
-        <div className="window-body stack">
-          <p>
-            <b>Study apart, together.</b>
-          </p>
-          {children}
-        </div>
-      </section>
-    </div>
-  );
-}
-
 export default function BoothLayout({ children }: { children: React.ReactNode }) {
   return (
-    <Suspense fallback={<Monitor>{null}</Monitor>}>
+    <Suspense fallback={null}>
       <Gate>{children}</Gate>
     </Suspense>
   );

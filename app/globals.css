@@ -407,27 +407,6 @@ li.tab-blue {
   background: rgba(255, 255, 255, 0.6);
 }
 
-/* ---------------------------------------------------------------- the desk (home screen) */
-
-.monitor {
-  max-width: 1320px;
-  margin: 0 auto;
-  min-height: calc(100vh - 32px);
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-}
-
-.desk-bar {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 8px 10px 8px 16px;
-  border-radius: var(--radius-pill);
-  background: linear-gradient(180deg, #ffffff 0%, var(--pearl) 60%, var(--pearl-lo) 100%);
-  border: 1px solid var(--pearl-lo);
-  box-shadow: var(--shadow-soft), inset 0 1px 0 #fff;
-}
 
 .brand {
   display: flex;
@@ -445,40 +424,6 @@ li.tab-blue {
     radial-gradient(circle at 35% 30%, #fff 0 18%, transparent 22%),
     radial-gradient(circle at 50% 55%, var(--sky-lo), #3c78b0 80%);
   box-shadow: 0 0 0 3px var(--chrome-mid), 0 0 0 4px var(--chrome-lo);
-}
-
-.desk-surface {
-  position: relative;
-  flex: 1;
-}
-
-.desktop {
-  display: flex;
-  gap: 20px;
-  align-items: flex-start;
-}
-
-.desktop-windows {
-  flex: 1;
-  display: flex;
-  flex-wrap: wrap;
-  gap: 20px;
-  align-items: flex-start;
-  min-width: 0;
-}
-
-.app-window {
-  width: 380px;
-  max-width: 100%;
-}
-
-.app-window.wide {
-  width: 680px;
-}
-
-.app-window .window-body {
-  max-height: calc(100vh - 210px);
-  overflow-y: auto;
 }
 
 .desktop-loading {
@@ -1047,9 +992,295 @@ body.pip .widget-window .window-body {
   }
 }
 
-/* Sign-in: the magic link is a quiet secondary option. */
+/* ---------------------------------------------------------------- landing (signed out)
+   Timeline: the title writes itself out (0.2–2.7s), then the tagline, chips and
+   sign-in card float in. Resting styles are the finished state, so with reduced
+   motion (animations off) the page simply appears complete. */
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+.landing {
+  position: relative;
+  isolation: isolate;
+  min-height: calc(100vh - 32px);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 24px 0 40px;
+  text-align: center;
+}
+
+.landing-title {
+  position: relative;
+  width: min(760px, 100%);
+  margin: 0;
+}
+
+.landing-title svg {
+  display: block;
+  width: 100%;
+  height: auto;
+  overflow: visible;
+  filter: drop-shadow(0 6px 10px rgba(120, 90, 160, 0.18));
+}
+
+.landing-title text {
+  font-family: var(--font-card), cursive;
+  font-size: 170px;
+}
+
+.title-ink {
+  fill: url(#title-ink);
+  stroke: #7b5fb0;
+  stroke-width: 1.4;
+  stroke-opacity: 0.35;
+  stroke-dasharray: 1600;
+  stroke-dashoffset: 0;
+  animation:
+    title-draw 2.5s cubic-bezier(0.45, 0.05, 0.35, 1) 0.2s both,
+    title-fill 0.9s ease-out 2s both,
+    title-settle 0.9s ease-out 2s both;
+}
+
+/* The pen line softens once the colour has flowed in. */
+@keyframes title-settle {
+  from {
+    stroke-opacity: 1;
+  }
+  to {
+    stroke-opacity: 0.35;
+  }
+}
+
+.title-shadow {
+  fill: rgba(255, 255, 255, 0.9);
+  animation: title-fill 0.9s ease-out 2.2s both;
+}
+
+/* Reveal from left to right, like a pen moving across the page. */
+.title-write {
+  clip-path: inset(-20% -5% -20% -5%);
+  animation: title-reveal 2.5s cubic-bezier(0.45, 0.05, 0.35, 1) 0.2s both;
+}
+
+@keyframes title-reveal {
+  from {
+    clip-path: inset(-20% 100% -20% -5%);
+  }
+  to {
+    clip-path: inset(-20% -5% -20% -5%);
+  }
+}
+
+@keyframes title-draw {
+  from {
+    stroke-dashoffset: 1600;
+  }
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+@keyframes title-fill {
+  from {
+    fill-opacity: 0;
+  }
+  to {
+    fill-opacity: 1;
+  }
+}
+
+/* A glossy sparkle that rides along the writing. */
+.title-pen {
+  position: absolute;
+  top: 46%;
+  left: 88%;
+  width: 18px;
+  height: 18px;
+  margin: -9px 0 0 -9px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 30%, #fff 0 30%, var(--pink-hi) 55%, rgba(239, 163, 191, 0) 72%);
+  box-shadow: 0 0 14px 4px rgba(255, 255, 255, 0.8);
+  opacity: 0;
+  animation: title-pen 2.6s cubic-bezier(0.45, 0.05, 0.35, 1) 0.2s both;
+  pointer-events: none;
+}
+
+@keyframes title-pen {
+  0% {
+    left: 9%;
+    top: 40%;
+    opacity: 0;
+  }
+  8% {
+    opacity: 1;
+  }
+  30% {
+    top: 58%;
+  }
+  55% {
+    top: 38%;
+  }
+  80% {
+    top: 56%;
+  }
+  92% {
+    opacity: 1;
+  }
+  100% {
+    left: 90%;
+    top: 46%;
+    opacity: 0;
+  }
+}
+
+.landing-tagline {
+  font: 800 26px var(--font-display-stack);
+  animation: rise 0.6s ease-out 2.6s both;
+}
+
+.landing-blurb {
+  max-width: 460px;
+  color: var(--ink-soft);
+  font-size: 15px;
+  animation: rise 0.6s ease-out 2.8s both;
+}
+
+.landing-features {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 8px;
+  margin: 4px 0 8px;
+  padding: 0;
+  list-style: none;
+}
+
+.landing-features li {
+  padding: 4px 14px;
+  border-radius: var(--radius-pill);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.85) 0 46%, rgba(255, 255, 255, 0) 52%),
+    linear-gradient(180deg, #fff, var(--pearl));
+  border: 1px solid var(--panel-edge);
+  font-weight: 700;
+  box-shadow: 0 3px 8px rgba(80, 90, 120, 0.12);
+  animation: pop 0.45s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}
+
+.landing-features li:nth-child(1) {
+  border-color: var(--pink-lo);
+}
+
+.landing-features li:nth-child(2) {
+  border-color: var(--sky-lo);
+}
+
+.landing-features li:nth-child(3) {
+  border-color: var(--lime-lo);
+}
+
+.landing-auth {
+  width: min(420px, 100%);
+  animation: float-up 0.8s cubic-bezier(0.34, 1.4, 0.64, 1) 3.4s both;
+}
+
+.auth-card {
+  text-align: left;
+}
+
+.auth-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.auth-actions button {
+  flex: 1;
+}
+
 .login-magic {
-  align-self: flex-start;
+  align-self: center;
+}
+
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes pop {
+  from {
+    opacity: 0;
+    transform: scale(0.6);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes float-up {
+  from {
+    opacity: 0;
+    transform: translateY(40px) scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* Soft glossy bubbles drifting behind everything. */
+.landing-bubbles {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.bubble {
+  position: absolute;
+  border-radius: 50%;
+  background:
+    radial-gradient(circle at 32% 28%, rgba(255, 255, 255, 0.95) 0 12%, rgba(255, 255, 255, 0) 30%),
+    radial-gradient(circle at 50% 55%, var(--b), rgba(255, 255, 255, 0.2) 75%);
+  border: 1px solid rgba(255, 255, 255, 0.7);
+  opacity: 0.55;
+  animation: drift var(--t) ease-in-out infinite alternate;
+}
+
+.bubble-0 { --b: var(--pink-hi); --t: 14s; width: 120px; height: 120px; left: 6%; top: 12%; }
+.bubble-1 { --b: var(--sky-hi); --t: 18s; width: 70px; height: 70px; left: 82%; top: 16%; }
+.bubble-2 { --b: var(--lime-hi); --t: 16s; width: 90px; height: 90px; left: 88%; top: 64%; }
+.bubble-3 { --b: var(--pink-hi); --t: 20s; width: 46px; height: 46px; left: 18%; top: 72%; }
+.bubble-4 { --b: var(--sky-hi); --t: 15s; width: 150px; height: 150px; left: 70%; top: 82%; }
+.bubble-5 { --b: #e3d5f5; --t: 19s; width: 60px; height: 60px; left: 30%; top: 6%; }
+.bubble-6 { --b: var(--lime-hi); --t: 17s; width: 36px; height: 36px; left: 60%; top: 8%; }
+.bubble-7 { --b: #e3d5f5; --t: 21s; width: 100px; height: 100px; left: 2%; top: 52%; }
+.bubble-8 { --b: var(--pink-hi); --t: 13s; width: 28px; height: 28px; left: 48%; top: 90%; }
+
+@keyframes drift {
+  from {
+    transform: translate(0, 0);
+  }
+  to {
+    transform: translate(18px, -26px);
+  }
 }
 
 /* ---------------------------------------------------------------- app shell: rail, top bar, one screen */
@@ -1670,13 +1901,6 @@ button.style-option {
   body {
     padding: 8px 8px 84px;
   }
-  .desktop {
-    flex-direction: column;
-  }
-  .desk-bar {
-    border-radius: 22px;
-    flex-wrap: wrap;
-  }
   /* The nav rail becomes a bottom tab bar. */
   .nav-rail {
     position: fixed;
@@ -1707,5 +1931,8 @@ button.style-option {
   }
   .timer-readout.timer-big {
     font-size: 48px;
+  }
+  .landing-tagline {
+    font-size: 22px;
   }
 }
