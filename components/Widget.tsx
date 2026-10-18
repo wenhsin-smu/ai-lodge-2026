@@ -1,9 +1,11 @@
 "use client";
 
-import { useEffect, useState, useSyncExternalStore } from "react";
+import { createContext, useContext, useEffect, useState, useSyncExternalStore } from "react";
 import { createPortal } from "react-dom";
-import PostList from "@/components/PostList";
-import { useBooth } from "@/components/BoothProvider";
+import { useRouter } from "next/navigation";
+import ScratchCard from "@/components/ScratchCard";
+import { postStyle, useBooth } from "@/components/BoothProvider";
+import { useFeed } from "@/components/useFeed";
 
 const LATEST = 3;
 const noSubscribe = () => () => {};
@@ -46,11 +48,16 @@ function copyStyles(target: Document) {
   }
 }
 
+type Pip = { supported: boolean; isOpen: boolean; open: () => Promise<void> };
+const PipContext = createContext<Pip>({ supported: false, isOpen: false, open: async () => {} });
+export const usePip = () => useContext(PipContext);
+
 /**
- * The small always-on-top study widget. Pops out with Document Picture-in-Picture
- * in Chrome/Edge; elsewhere it stays as a panel on the page.
+ * Owns the small always-on-top study widget. It pops out with Document
+ * Picture-in-Picture in Chrome/Edge and stays open while you switch tabs.
  */
-export default function WidgetLauncher({ onNewPost }: { onNewPost: () => void }) {
+export function PipProvider({ children }: { children: React.ReactNode }) {
+  const router = useRouter();
   const [pipWindow, setPipWindow] = useState<Window | null>(null);
   const supported = useSyncExternalStore(
     noSubscribe,
@@ -69,7 +76,7 @@ export default function WidgetLauncher({ onNewPost }: { onNewPost: () => void })
       pip.window.focus();
       return;
     }
-    const win = await pip.requestWindow({ width: 300, height: 520 });
+    const win = await pip.requestWindow({ width: 300, height: 420 });
     copyStyles(win.document);
     win.document.title = "Study Booth";
     win.document.body.className = "pip";
@@ -79,110 +86,98 @@ export default function WidgetLauncher({ onNewPost }: { onNewPost: () => void })
 
   const newPost = () => {
     window.focus();
-    onNewPost();
+    router.push("/?new=1");
   };
 
   return (
-    <div className="stack">
-      {supported ? (
-        <div className="field-row">
-          <button className="pill-blue" onClick={open}>{pipWindow ? "Widget is popped out" : "Pop out widget"}</button>
-        </div>
-      ) : (
-        <p className="hint">Pop-out needs Chrome or Edge, so the widget lives here on the page instead.</p>
-      )}
-      {pipWindow ? (
-        createPortal(<WidgetBody onNewPost={newPost} />, pipWindow.document.body)
-      ) : (
-        <WidgetBody onNewPost={newPost} inline />
-      )}
-    </div>
+    <PipContext.Provider value={{ supported, isOpen: Boolean(pipWindow), open }}>
+      {children}
+      {pipWindow && createPortal(<WidgetBody onNewPost={newPost} />, pipWindow.document.body)}
+    </PipContext.Provider>
   );
 }
 
-function WidgetBody({ onNewPost, inline = false }: { onNewPost: () => void; inline?: boolean }) {
+function WidgetBody({ onNewPost }: { onNewPost: () => void }) {
   const { group, checkins } = useBooth();
   const latestCheckin = checkins[0];
 
   return (
-    <div className={inline ? "widget-inline" : "window widget-window"}>
-      {!inline && (
-        <div className="title-bar">
-          <div className="title-bar-text">Study Booth{group ? ` · ${group.name}` : ""}</div>
-        </div>
-      )}
-      <div className={inline ? "stack" : "window-body stack"}>
-        <StudyTimer />
+    <div className="window widget-window">
+      <div className="title-bar">
+        <div className="title-bar-text">Study Booth{group ? ` · ${group.name}` : ""}</div>
+      </div>
+      <div className="window-body stack">
+        <MiniTimer />
+        {latestCheckin && <div className="sticky-note small-note">{latestCheckin.message}</div>}
+        <WidgetThumbs />
         <button className="pill-green" onClick={onNewPost}>
           New post
         </button>
-        {latestCheckin && <div className="sticky-note small-note">{latestCheckin.message}</div>}
-        <PostList limit={LATEST} eraserSize={26} compact />
       </div>
     </div>
   );
 }
 
-export function StudyTimer() {
-  const { group, session, startStudy, stopStudy, setFocus } = useBooth();
-  const [minutes, setMinutes] = useState(50);
-  const [focus, setFocusChoice] = useState(false);
-  const [now, setNow] = useState(() => Date.now());
-  const [error, setError] = useState("");
+/** The last three posts as small scratch cards. */
+function WidgetThumbs() {
+  const { imageUrls, reveal } = useBooth();
+  const { shown, authorOf, isCovered } = useFeed();
+  const latest = shown.slice(0, LATEST);
+  if (latest.length === 0) return <p className="hint">No posts yet today.</p>;
+  return (
+    <div className="widget-thumbs">
+      {latest.map((p) => (
+        <ScratchCard
+          key={p.id}
+          postId={p.id}
+          imageUrl={imageUrls[p.image_path]}
+          author={authorOf(p)}
+          covered={isCovered(p)}
+          eraserSize={90}
+          onRevealed={() => void reveal(p.id)}
+          twinkle={postStyle(p) === "Bedazzled"}
+        />
+      ))}
+    </div>
+  );
+}
 
+export function formatLeft(ms: number) {
+  const left = Math.max(0, ms);
+  const mm = Math.floor(left / 60_000);
+  const ss = Math.floor((left % 60_000) / 1000);
+  return `${mm}:${ss.toString().padStart(2, "0")}`;
+}
+
+/** Ticks once a second while a study session is running. */
+export function useSessionLeft() {
+  const { session } = useBooth();
+  const [now, setNow] = useState(() => Date.now());
   useEffect(() => {
     if (!session) return;
     const t = window.setInterval(() => setNow(Date.now()), 1000);
     return () => window.clearInterval(t);
   }, [session]);
+  return session ? session.endsAt - now : null;
+}
 
+function MiniTimer() {
+  const { group, session, startStudy, stopStudy } = useBooth();
+  const left = useSessionLeft();
   if (!group) return null;
-
-  if (!session) {
+  if (!session || left === null) {
     return (
-      <fieldset>
-        <legend>Study timer</legend>
-        <div className="field-row">
-          <select value={minutes} onChange={(e) => setMinutes(Number(e.target.value))} aria-label="Timer length">
-            {[25, 50, 90, 120].map((m) => (
-              <option key={m} value={m}>
-                {m} min
-              </option>
-            ))}
-          </select>
-          <input id="focus-choice" type="checkbox" checked={focus} onChange={(e) => setFocusChoice(e.target.checked)} />
-          <label htmlFor="focus-choice">Focus mode</label>
-        </div>
-        <button
-          className="pill-blue"
-          onClick={() => {
-            setError("");
-            startStudy(minutes, focus).catch((e: Error) => setError(e.message));
-          }}
-        >
-          Start studying
-        </button>
-        {error && <p className="hint">{error}</p>}
-      </fieldset>
+      <button className="pill-blue" onClick={() => void startStudy(50, false).catch(() => {})}>
+        Start a 50 min session
+      </button>
     );
   }
-
-  const left = Math.max(0, session.endsAt - now);
-  const mm = Math.floor(left / 60_000);
-  const ss = Math.floor((left % 60_000) / 1000);
   return (
-    <fieldset>
-      <legend>Studying</legend>
-      <div className="timer-readout">
-        {mm}:{ss.toString().padStart(2, "0")}
-      </div>
-      <div className="field-row">
-        <input id="focus-live" type="checkbox" checked={session.focus} onChange={(e) => setFocus(e.target.checked)} />
-        <label htmlFor="focus-live">Focus mode (hide new posts)</label>
-      </div>
-      <button className="pill-blue" onClick={() => void stopStudy()}>
-        End session
+    <div className="field-row mini-timer">
+      <div className="timer-readout">{formatLeft(left)}</div>
+      <button className="small" onClick={() => void stopStudy()}>
+        End
       </button>
-    </fieldset>
+    </div>
   );
 }

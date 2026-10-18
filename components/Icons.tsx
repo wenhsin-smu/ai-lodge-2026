@@ -92,3 +92,21 @@ export function WidgetIcon({ size }: IconProps) {
     </Tile>
   );
 }
+
+export function HomeIcon({ size }: IconProps) {
+  return (
+    <Tile size={size} tone="pink" id="ic-home">
+      <path d="M15 33 L32 18 L49 33" fill="none" stroke="#fff" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round" />
+      <path d="M20 31 V47 H44 V31 L32 21z" fill="#fff" />
+      <rect x="28" y="36" width="8" height="11" rx="2.5" fill="#efa3bf" />
+    </Tile>
+  );
+}
+
+export function PlusIcon({ size }: IconProps) {
+  return (
+    <Tile size={size} tone="lime" id="ic-plus">
+      <path d="M32 19 V45 M19 32 H45" stroke="#fff" strokeWidth="7" strokeLinecap="round" />
+    </Tile>
+  );
+}

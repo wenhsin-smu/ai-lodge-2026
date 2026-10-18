@@ -446,34 +446,6 @@ li.tab-blue {
   box-shadow: 0 0 0 3px var(--chrome-mid), 0 0 0 4px var(--chrome-lo);
 }
 
-.taskbar {
-  flex: 1;
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  justify-content: flex-end;
-}
-
-.taskbar form {
-  margin: 0;
-}
-
-.taskbar-user {
-  flex: 1;
-  color: var(--ink-soft);
-  font-weight: 700;
-}
-
-.taskbar-clock {
-  padding: 4px 12px;
-  border-radius: var(--radius-pill);
-  background: var(--lcd);
-  color: var(--lcd-ink);
-  font: 800 13px var(--font-ui-stack);
-  box-shadow: inset 0 2px 3px rgba(40, 60, 20, 0.2);
-  user-select: none;
-}
-
 .desk-surface {
   position: relative;
   flex: 1;
@@ -483,54 +455,6 @@ li.tab-blue {
   display: flex;
   gap: 20px;
   align-items: flex-start;
-}
-
-.desktop-icons {
-  display: flex;
-  flex-direction: column;
-  gap: 14px;
-  width: 100px;
-  flex-shrink: 0;
-}
-
-/* Desktop icons are glossy tiles, not pills. */
-.desktop-icon {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 6px;
-  min-height: 0;
-  padding: 6px 4px;
-  border: none;
-  border-radius: 18px;
-  background: transparent;
-  box-shadow: none;
-  color: var(--ink);
-  font: 700 12px var(--font-ui-stack);
-}
-
-.desktop-icon::after {
-  display: none;
-}
-
-.desktop-icon svg {
-  filter: drop-shadow(0 5px 6px rgba(70, 80, 110, 0.25));
-  transition: transform 0.15s ease;
-}
-
-.desktop-icon:hover:not(:disabled) {
-  filter: none;
-}
-
-.desktop-icon:hover svg {
-  transform: translateY(-2px);
-}
-
-.desktop-icon:focus-visible span,
-.desktop-icon:hover span {
-  background: rgba(255, 255, 255, 0.85);
-  border-radius: var(--radius-pill);
-  padding: 0 6px;
 }
 
 .desktop-windows {
@@ -562,15 +486,6 @@ li.tab-blue {
 }
 
 /* Sticky notes: pastel paper with a tiny glossy tape strip. */
-.bezel-notes {
-  position: absolute;
-  top: -6px;
-  right: 8px;
-  display: flex;
-  gap: 14px;
-  z-index: 5;
-}
-
 .sticky-note {
   position: relative;
   width: 200px;
@@ -787,15 +702,6 @@ li.tab-blue {
   border-radius: var(--radius-pill);
   background: linear-gradient(180deg, #fff, var(--pearl));
   border: 1px solid var(--panel-edge);
-}
-
-/* After midnight: a soft lavender-gold glow over the desk (static, no animation). */
-.monitor.late-night .desk-surface::before {
-  content: "";
-  position: absolute;
-  inset: -40px;
-  pointer-events: none;
-  background: radial-gradient(ellipse at 85% 0%, rgba(255, 200, 120, 0.35), transparent 55%);
 }
 
 .late-night-tag {
@@ -1172,6 +1078,606 @@ body.pip .widget-window .window-body {
   }
 }
 
+/* ---------------------------------------------------------------- app shell: rail, top bar, one screen */
+
+.app {
+  display: flex;
+  gap: 20px;
+  max-width: 1100px;
+  margin: 0 auto;
+  min-height: calc(100vh - 32px);
+}
+
+.nav-rail {
+  position: sticky;
+  top: 16px;
+  align-self: flex-start;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  width: 186px;
+  flex-shrink: 0;
+  padding: 10px;
+  border-radius: var(--radius-panel);
+  background: linear-gradient(180deg, #ffffff 0%, var(--pearl) 100%);
+  border: 1px solid var(--panel-edge);
+  box-shadow: var(--shadow-soft), inset 0 1px 0 #fff;
+}
+
+.nav-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 12px 6px 6px;
+  border-radius: var(--radius-pill);
+  border: 1px solid transparent;
+  color: var(--ink);
+  font: 700 14px var(--font-ui-stack);
+  white-space: nowrap;
+  text-decoration: none;
+}
+
+.nav-item svg {
+  flex-shrink: 0;
+  filter: drop-shadow(0 3px 4px rgba(70, 80, 110, 0.22));
+}
+
+.nav-item:hover {
+  background: rgba(255, 255, 255, 0.8);
+}
+
+/* Active tab: a pastel jelly pill behind the icon and label. */
+.nav-item.active {
+  border-color: var(--pink-lo);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.75) 0 46%, rgba(255, 255, 255, 0) 52%),
+    linear-gradient(180deg, var(--pink-hi), #fbe3ec);
+  box-shadow: inset 0 1px 0 #fff, 0 2px 6px rgba(207, 111, 149, 0.2);
+}
+
+a:focus-visible,
+[tabindex]:focus-visible,
+input:focus-visible,
+select:focus-visible {
+  outline: 3px solid var(--sky-edge);
+  outline-offset: 2px;
+}
+
+.app-main {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.top-bar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 10px 8px 16px;
+  border-radius: var(--radius-pill);
+  background: linear-gradient(180deg, #ffffff 0%, var(--pearl) 60%, var(--pearl-lo) 100%);
+  border: 1px solid var(--pearl-lo);
+  box-shadow: var(--shadow-soft), inset 0 1px 0 #fff;
+}
+
+.top-bar .brand {
+  text-decoration: none;
+}
+
+.top-bar-right {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.timer-chip {
+  padding: 5px 14px;
+  border-radius: var(--radius-pill);
+  background: linear-gradient(180deg, #e9f7d4, var(--lcd));
+  color: var(--lcd-ink);
+  border: 1px solid var(--chrome-lo);
+  font: 800 14px var(--font-ui-stack);
+  font-variant-numeric: tabular-nums;
+  text-decoration: none;
+  box-shadow: inset 0 2px 3px rgba(40, 60, 20, 0.18);
+}
+
+.avatar {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  border-radius: 50%;
+  font-family: var(--font-display-stack);
+  font-weight: 800;
+  color: var(--ink);
+  background:
+    radial-gradient(circle at 35% 25%, rgba(255, 255, 255, 0.9) 0 18%, transparent 40%),
+    linear-gradient(180deg, var(--av-hi), var(--av-lo));
+  border: 1px solid var(--av-edge);
+  box-shadow: inset 0 -2px 4px rgba(0, 0, 0, 0.08);
+}
+
+.avatar-lime { --av-hi: var(--lime-hi); --av-lo: var(--lime-lo); --av-edge: var(--lime-edge); }
+.avatar-pink { --av-hi: var(--pink-hi); --av-lo: var(--pink-lo); --av-edge: var(--pink-edge); }
+.avatar-sky { --av-hi: var(--sky-hi); --av-lo: var(--sky-lo); --av-edge: var(--sky-edge); }
+.avatar-pearl { --av-hi: #ffffff; --av-lo: var(--pearl-lo); --av-edge: var(--pearl-btn-edge); }
+
+.avatar-menu,
+.popover-anchor {
+  position: relative;
+}
+
+button.avatar-button {
+  min-height: 0;
+  padding: 2px;
+  border-radius: 50%;
+}
+
+.popover {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  z-index: 30;
+  min-width: 200px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px;
+  border-radius: 18px;
+  background: linear-gradient(180deg, #ffffff, var(--pearl));
+  border: 1px solid var(--panel-edge);
+  box-shadow: var(--shadow-soft);
+}
+
+.popover form {
+  margin: 0;
+}
+
+.popover-head {
+  display: flex;
+  flex-direction: column;
+}
+
+.popover-link {
+  color: var(--ink);
+  font-weight: 700;
+}
+
+.settings-popover {
+  min-width: 280px;
+}
+
+.checkin-banner {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  max-width: 600px;
+  width: 100%;
+  margin: 0 auto;
+  padding: 10px 10px 10px 16px;
+  border-radius: 18px;
+  background: linear-gradient(180deg, #fffbe0, #fff3b8);
+  border: 1px solid #ecd98a;
+  font-weight: 700;
+  box-shadow: 0 6px 14px rgba(80, 90, 120, 0.14);
+}
+
+.checkin-banner span {
+  flex: 1;
+}
+
+.checkin-banner button {
+  width: 28px;
+  padding: 0;
+}
+
+.app-notice {
+  max-width: 600px;
+  width: 100%;
+  margin: 0 auto;
+}
+
+.app-column {
+  width: 100%;
+  max-width: 560px;
+  margin: 0 auto;
+  padding-bottom: 32px;
+}
+
+.card .window-body {
+  padding: 16px 18px 18px;
+}
+
+a.pill-link {
+  align-self: flex-start;
+  padding: 8px 18px;
+  border-radius: var(--radius-pill);
+  border: 1px solid var(--lime-edge);
+  background: linear-gradient(180deg, var(--lime-hi), var(--lime-lo));
+  color: var(--ink);
+  font-weight: 800;
+  text-decoration: none;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.9), 0 3px 7px rgba(70, 80, 110, 0.18);
+}
+
+.empty-state .window-body {
+  align-items: center;
+  text-align: center;
+}
+
+.empty-state a.pill-link {
+  align-self: center;
+}
+
+/* ---------------------------------------------------------------- stories row */
+
+.stories {
+  display: flex;
+  gap: 14px;
+  overflow-x: auto;
+  padding: 12px 14px;
+  border-radius: var(--radius-panel);
+  background: linear-gradient(180deg, #ffffff, var(--panel));
+  border: 1px solid var(--panel-edge);
+  box-shadow: var(--shadow-soft);
+}
+
+.story {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  width: 72px;
+  flex-shrink: 0;
+}
+
+button.story-bubble {
+  min-height: 0;
+  width: 70px;
+  height: 70px;
+  padding: 0;
+  border-radius: 50%;
+  border: none;
+  background: transparent;
+  box-shadow: none;
+}
+
+.story-bubble::after {
+  display: none;
+}
+
+/* The ring: pastel for unseen posts, grey once you've seen them all. */
+.story-bubble.ring-unseen {
+  background: conic-gradient(var(--pink-lo), var(--sky-lo), var(--lime-lo), var(--pink-lo));
+}
+
+.story-bubble.ring-seen {
+  background: var(--chrome-lo);
+}
+
+.story-bubble.ring-none {
+  background: transparent;
+}
+
+.story-bubble .avatar {
+  border: 3px solid #fff;
+}
+
+button.story-bubble:disabled {
+  opacity: 0.7;
+}
+
+button.story-plus {
+  position: absolute;
+  top: 46px;
+  right: 2px;
+  min-height: 0;
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  font-size: 16px;
+  border: 2px solid #fff;
+}
+
+.story-name {
+  max-width: 72px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+/* ---------------------------------------------------------------- feed cards */
+
+.feed-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.feed-head h2 {
+  font-size: 20px;
+}
+
+.post-card .window-body,
+.post-card {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 12px 14px 14px;
+}
+
+.post-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.post-who {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.15;
+  margin-right: auto;
+}
+
+.style-tag {
+  padding: 2px 10px;
+  border-radius: var(--radius-pill);
+  font-size: 11px;
+  font-weight: 800;
+  background: linear-gradient(180deg, #fff, var(--pink-hi));
+  border: 1px solid var(--pink-lo);
+}
+
+button.dots {
+  width: 34px;
+  padding: 0;
+  font-size: 18px;
+}
+
+.menu-popover {
+  min-width: 190px;
+}
+
+.post-caption {
+  font-weight: 600;
+}
+
+/* ---------------------------------------------------------------- story viewer */
+
+.viewer-backdrop,
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  background: rgba(60, 64, 80, 0.45);
+  backdrop-filter: blur(6px);
+}
+
+.viewer {
+  width: min(680px, 100%);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 14px;
+  border-radius: 26px;
+  background: linear-gradient(180deg, #ffffff, var(--pearl));
+  border: 1px solid var(--panel-edge);
+  box-shadow: var(--shadow-soft);
+}
+
+.viewer-progress {
+  display: flex;
+  gap: 4px;
+}
+
+.viewer-progress span {
+  flex: 1;
+  height: 4px;
+  border-radius: 2px;
+  background: var(--pearl-lo);
+}
+
+.viewer-progress span.done,
+.viewer-progress span.now {
+  background: var(--pink-lo);
+}
+
+.viewer-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.viewer-close {
+  margin-left: auto;
+  width: 34px;
+  padding: 0;
+}
+
+.viewer-stage {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.viewer-card {
+  flex: 1;
+  min-width: 0;
+}
+
+button.viewer-nav {
+  width: 38px;
+  min-height: 38px;
+  padding: 0;
+  font-size: 22px;
+}
+
+.viewer-caption {
+  min-height: 20px;
+  text-align: center;
+  font-weight: 700;
+}
+
+/* ---------------------------------------------------------------- new post modal */
+
+.modal {
+  width: min(720px, 100%);
+  max-height: calc(100vh - 32px);
+  display: flex;
+  flex-direction: column;
+}
+
+.modal .window-body {
+  overflow-y: auto;
+}
+
+.steps {
+  display: flex;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-weight: 700;
+  color: var(--ink-soft);
+}
+
+.steps li {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 12px 3px 4px;
+  border-radius: var(--radius-pill);
+  background: rgba(255, 255, 255, 0.7);
+  border: 1px solid var(--panel-edge);
+}
+
+.steps li span {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: var(--pearl-lo);
+  font-size: 12px;
+}
+
+.steps li.current {
+  color: var(--ink);
+  border-color: var(--sky-lo);
+}
+
+.steps li.current span,
+.steps li.done span {
+  background: var(--sky-lo);
+  color: #fff;
+}
+
+.style-picker {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+}
+
+button.style-option {
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+  min-height: 84px;
+  padding: 14px 20px;
+  border-radius: 24px;
+  text-align: left;
+}
+
+.style-option b {
+  font: 800 18px var(--font-display-stack);
+}
+
+.style-option span {
+  font-weight: 600;
+  font-size: 13px;
+}
+
+/* ---------------------------------------------------------------- study, group */
+
+.timer-readout.timer-big {
+  font-size: 64px;
+  padding: 18px;
+  font-variant-numeric: tabular-nums;
+}
+
+.today-total {
+  text-align: center;
+}
+
+.invite-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.invite-row .invite-code {
+  flex: 1;
+}
+
+.member-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.member-list li {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-weight: 700;
+}
+
+.group-name b {
+  font: 800 20px var(--font-display-stack);
+}
+
+/* Widget thumbnails: the latest three posts side by side. */
+.widget-thumbs {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+}
+
+.widget-thumbs .scratch-frame {
+  border-radius: 10px;
+}
+
+.mini-timer .timer-readout {
+  flex: 1;
+  font-size: 24px;
+  padding: 6px;
+}
+
+.app.late-night::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background: radial-gradient(ellipse at 85% 0%, rgba(255, 200, 120, 0.35), transparent 55%);
+}
+
 /* ---------------------------------------------------------------- motion + small screens */
 
 @media (prefers-reduced-motion: reduce) {
@@ -1188,22 +1694,44 @@ body.pip .widget-window .window-body {
 
 @media (max-width: 760px) {
   body {
-    padding: 8px;
+    padding: 8px 8px 84px;
   }
   .desktop {
     flex-direction: column;
   }
-  .desktop-icons {
-    flex-direction: row;
-    flex-wrap: wrap;
-    width: auto;
-  }
-  .bezel-notes {
-    position: static;
-    margin-bottom: 8px;
-  }
   .desk-bar {
     border-radius: 22px;
     flex-wrap: wrap;
+  }
+  /* The nav rail becomes a bottom tab bar. */
+  .nav-rail {
+    position: fixed;
+    top: auto;
+    left: 8px;
+    right: 8px;
+    bottom: 8px;
+    z-index: 40;
+    width: auto;
+    flex-direction: row;
+    justify-content: space-around;
+    padding: 6px;
+  }
+  .nav-item {
+    flex-direction: column;
+    gap: 2px;
+    padding: 4px 8px;
+    border-radius: 16px;
+    font-size: 10px;
+    text-align: center;
+  }
+  .nav-item svg {
+    width: 26px;
+    height: 26px;
+  }
+  .style-picker {
+    grid-template-columns: 1fr;
+  }
+  .timer-readout.timer-big {
+    font-size: 48px;
   }
 }

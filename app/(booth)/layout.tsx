@@ -3,12 +3,14 @@ import Link from "next/link";
 import { cookies } from "next/headers";
 import { connection } from "next/server";
 import { BoothProvider } from "@/components/BoothProvider";
-import Desktop from "@/components/Desktop";
+import AppShell from "@/components/AppShell";
 import Monitor from "@/components/Monitor";
 import { hasSupabaseEnv } from "@/utils/supabase/env";
 import { createClient } from "@/utils/supabase/server";
 
-async function Home() {
+// Shared by Home, Study, Weekly Story and My Group, so the data, the study
+// timer and the pop-out widget survive moving between tabs.
+async function Gate({ children }: { children: React.ReactNode }) {
   if (!hasSupabaseEnv) {
     return (
       <Monitor>
@@ -40,7 +42,7 @@ async function Home() {
 
   return (
     <BoothProvider userId={user.id}>
-      <Desktop email={user.email ?? ""} />
+      <AppShell email={user.email ?? ""}>{children}</AppShell>
     </BoothProvider>
   );
 }
@@ -63,10 +65,10 @@ function Welcome({ children }: { children: React.ReactNode }) {
   );
 }
 
-export default function Page() {
+export default function BoothLayout({ children }: { children: React.ReactNode }) {
   return (
     <Suspense fallback={<Monitor>{null}</Monitor>}>
-      <Home />
+      <Gate>{children}</Gate>
     </Suspense>
   );
 }

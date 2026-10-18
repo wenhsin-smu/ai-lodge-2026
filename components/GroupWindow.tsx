@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useBooth } from "@/components/BoothProvider";
+import { Avatar } from "@/components/ui";
 
 export default function GroupWindow({ onJoined }: { onJoined?: () => void }) {
   const { me, groups, group, members, selectGroup, createGroup, joinGroup, leaveGroup, renameMe } = useBooth();
@@ -11,6 +12,7 @@ export default function GroupWindow({ onJoined }: { onJoined?: () => void }) {
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState("");
   const [confirmLeave, setConfirmLeave] = useState(false);
+  const [copied, setCopied] = useState(false);
 
   const run = async (fn: () => Promise<void>, ok: string) => {
     setBusy(true);
@@ -41,18 +43,32 @@ export default function GroupWindow({ onJoined }: { onJoined?: () => void }) {
               </select>
             </div>
           )}
-          <p>
-            <b>{group.name}</b> · invite-only
+          <p className="group-name">
+            <b>{group.name}</b> <span className="hint">· invite-only</span>
           </p>
-          <div className="invite-code" aria-label="Invite code">
-            {group.invite_code}
+          <div className="invite-row">
+            <div className="invite-code" aria-label="Invite code">
+              {group.invite_code}
+            </div>
+            <button
+              className="pill-blue"
+              onClick={() => {
+                void navigator.clipboard?.writeText(group.invite_code).then(
+                  () => setCopied(true),
+                  () => setCopied(false),
+                );
+              }}
+            >
+              {copied ? "Copied!" : "Copy"}
+            </button>
           </div>
           <p className="hint">Give this code to friends so they can join. Only members can see the group&apos;s posts.</p>
           <fieldset>
             <legend>Members ({members.length})</legend>
-            <ul className="tree-view">
+            <ul className="member-list">
               {members.map((m) => (
                 <li key={m.id}>
+                  <Avatar id={m.id} name={m.display_name} size={32} />
                   {m.display_name}
                   {m.id === me?.id ? " (you)" : ""}
                 </li>

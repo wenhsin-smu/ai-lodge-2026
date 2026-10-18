@@ -6,26 +6,54 @@ import BedazzleComposer from "@/components/BedazzleComposer";
 import NoteComposer from "@/components/NoteComposer";
 import { useBooth, type NoteStyle, type PostKind } from "@/components/BoothProvider";
 
-type Tab = "photo" | "fog" | "note" | "gems";
+type Style = "photo" | "fog" | "note" | "gems";
 type Draft = { image: string; kind: PostKind; noteText?: string; style?: NoteStyle };
 
-export default function NewPost() {
-  const [tab, setTab] = useState<Tab>("photo");
+const STYLES: { id: Style; label: string; blurb: string; tone: "green" | "pink" | "blue" }[] = [
+  { id: "photo", label: "Photo", blurb: "A quick snap, with a filter", tone: "green" },
+  { id: "fog", label: "Fog glass", blurb: "Blow to fog, then write on it", tone: "pink" },
+  { id: "note", label: "Stitched", blurb: "A note embroidered on linen", tone: "blue" },
+  { id: "gems", label: "Bedazzled", blurb: "A note spelled in rhinestones", tone: "pink" },
+];
+
+/** Style → create → preview & share. */
+export default function NewPost({ onShared }: { onShared: (ok: boolean, message: string) => void }) {
+  const [style, setStyle] = useState<Style | null>(null);
   const [draft, setDraft] = useState<Draft | null>(null);
   const [lastResult, setLastResult] = useState<{ ok: boolean; message: string } | null>(null);
+  const step = !style ? 1 : draft ? 3 : 2;
 
   return (
     <div className="stack">
-      <menu role="tablist">
-        <Tab label="Photo" tone="green" selected={tab === "photo"} onSelect={() => setTab("photo")} />
-        <Tab label="Fog glass" tone="pink" selected={tab === "fog"} onSelect={() => setTab("fog")} />
-        <Tab label="Stitched note" tone="blue" selected={tab === "note"} onSelect={() => setTab("note")} />
-        <Tab label="Bedazzled" tone="pink" selected={tab === "gems"} onSelect={() => setTab("gems")} />
-      </menu>
-      <div className="window" role="tabpanel">
-        <div className="window-body stack">
-          {/* Keyed by tab so switching modes restarts the camera with or without the mic. */}
-          {tab === "gems" ? (
+      <ol className="steps" aria-label="Steps">
+        {["Style", "Create", "Share"].map((label, i) => (
+          <li key={label} className={step === i + 1 ? "current" : step > i + 1 ? "done" : ""} aria-current={step === i + 1 ? "step" : undefined}>
+            <span>{i + 1}</span> {label}
+          </li>
+        ))}
+      </ol>
+
+      {!style ? (
+        <div className="style-picker" role="group" aria-label="Choose a style">
+          {STYLES.map((s, i) => (
+            <button key={s.id} className={`style-option pill-${s.tone}`} onClick={() => setStyle(s.id)} data-autofocus={i === 0 ? true : undefined}>
+              <b>{s.label}</b>
+              <span>{s.blurb}</span>
+            </button>
+          ))}
+        </div>
+      ) : (
+        <>
+          {!draft && (
+            <div className="field-row">
+              <button className="small" onClick={() => setStyle(null)}>
+                ← Styles
+              </button>
+              <b>{STYLES.find((s) => s.id === style)!.label}</b>
+            </div>
+          )}
+          {/* Keyed by style so switching restarts the camera with or without the mic. */}
+          {style === "gems" ? (
             !draft && (
               <BedazzleComposer
                 onCreated={(image, noteText) => {
@@ -34,10 +62,10 @@ export default function NewPost() {
                 }}
               />
             )
-          ) : tab !== "note" ? (
+          ) : style !== "note" ? (
             <FogBooth
-              key={tab}
-              fog={tab === "fog"}
+              key={style}
+              fog={style === "fog"}
               hidden={Boolean(draft)}
               onCapture={(image, kind) => {
                 setLastResult(null);
@@ -58,10 +86,8 @@ export default function NewPost() {
             <SendPreview
               draft={draft}
               onCancel={() => setDraft(null)}
-              onDone={(ok, message) => {
-                setLastResult({ ok, message });
-                if (ok) setDraft(null);
-              }}
+              onDone={onShared}
+              onError={(message) => setLastResult({ ok: false, message })}
             />
           )}
           {lastResult && (
@@ -69,8 +95,8 @@ export default function NewPost() {
               {lastResult.message}
             </p>
           )}
-        </div>
-      </div>
+        </>
+      )}
     </div>
   );
 }
@@ -79,10 +105,14 @@ function SendPreview({
   draft,
   onCancel,
   onDone,
+  onError,
 }: {
   draft: Draft;
   onCancel: () => void;
+  /** The post was saved (shared, or held by moderation). */
   onDone: (ok: boolean, message: string) => void;
+  /** Nothing was saved; stay here so they can try again. */
+  onError: (message: string) => void;
 }) {
   const { group, sendPost } = useBooth();
   const [caption, setCaption] = useState("");
@@ -126,7 +156,7 @@ function SendPreview({
       });
       onDone(result.status === "approved", result.status === "approved" ? "Sent! Your friends can scratch to reveal it." : result.message);
     } catch (e) {
-      onDone(false, e instanceof Error ? e.message : "Couldn't send.");
+      onError(e instanceof Error ? e.message : "Couldn't send.");
     } finally {
       setSending(false);
     }
@@ -156,33 +186,7 @@ function SendPreview({
           {sending ? "Checking & sending..." : "Send to group"}
         </button>
       </div>
-      {!group && <p>Join or create a group first (My Group icon).</p>}
+      {!group && <p>Join or create a group first (My Group tab).</p>}
     </div>
-  );
-}
-
-function Tab({
-  label,
-  tone,
-  selected,
-  onSelect,
-}: {
-  label: string;
-  tone: "green" | "pink" | "blue";
-  selected: boolean;
-  onSelect: () => void;
-}) {
-  return (
-    <li role="tab" aria-selected={selected} className={`tab-${tone}`}>
-      <a
-        href="#"
-        onClick={(e) => {
-          e.preventDefault();
-          onSelect();
-        }}
-      >
-        {label}
-      </a>
-    </li>
   );
 }
