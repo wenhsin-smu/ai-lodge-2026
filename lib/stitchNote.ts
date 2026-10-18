@@ -11,8 +11,8 @@ const MARGIN = 40;
 const THREADS = ["#2b3fa8", "#c2338f", "#13915a", "#e8402f", "#5b5b60", "#e07b12"];
 
 type P = { x: number; y: number };
-export type Stitch = { a: P; b: P; color: string; thick: number };
-
+/** One backstitch: from a to b (where the thread goes in and out of the fabric). */
+export type Stitch = { a: P; b: P; color: string; shade: number; thick: number };
 /** Small seeded random generator so the same note always stitches the same way. */
 function seededRandom(seed: string) {
   let h = 1779033703;
@@ -63,42 +63,67 @@ function layout(words: string[], unit: number) {
   return blockH <= NOTE_H - MARGIN * 2 ? { lines, lineHeight, blockH } : null;
 }
 
-function pointAt(pts: P[], lengths: number[], d: number): P {
-  for (let i = 1; i < pts.length; i++) {
-    if (d <= lengths[i] || i === pts.length - 1) {
-      const seg = lengths[i] - lengths[i - 1] || 1;
-      const t = Math.min(1, Math.max(0, (d - lengths[i - 1]) / seg));
-      return { x: pts[i - 1].x + (pts[i].x - pts[i - 1].x) * t, y: pts[i - 1].y + (pts[i].y - pts[i - 1].y) * t };
+/** Chaikin corner cutting: rounds the path gently while keeping its endpoints. */
+function chaikin(pts: P[], iterations = 2, ratio = 0.07): P[] {
+  let out = pts;
+  for (let it = 0; it < iterations && out.length > 2; it++) {
+    const next: P[] = [out[0]];
+    for (let i = 0; i < out.length - 1; i++) {
+      const a = out[i];
+      const b = out[i + 1];
+      next.push({ x: a.x + (b.x - a.x) * ratio, y: a.y + (b.y - a.y) * ratio });
+      next.push({ x: a.x + (b.x - a.x) * (1 - ratio), y: a.y + (b.y - a.y) * (1 - ratio) });
     }
+    next.push(out[out.length - 1]);
+    out = next;
   }
-  return pts[pts.length - 1];
+  return out;
 }
 
-/** Splits a stroke into stem stitches: short, slanted, each overlapping the last. */
-function stitchStroke(pts: P[], unit: number, color: string, out: Stitch[]) {
+/** Points at an even spacing along a polyline (so stitches are equal length on curves too). */
+function resample(pts: P[], spacing: number): P[] {
   const lengths = [0];
   for (let i = 1; i < pts.length; i++) {
     lengths.push(lengths[i - 1] + Math.hypot(pts[i].x - pts[i - 1].x, pts[i].y - pts[i - 1].y));
   }
   const total = lengths[lengths.length - 1];
-  const step = Math.max(4, unit * 1.05);
-  const thick = Math.max(2.5, unit * 0.85);
-  const tilt = 0.3;
-  const count = Math.max(1, Math.ceil(total / step));
-  for (let i = 0; i < count; i++) {
-    const d0 = i * step;
-    const d1 = Math.min(total, d0 + step * 1.7);
-    const p0 = pointAt(pts, lengths, d0);
-    const p1 = pointAt(pts, lengths, Math.max(d1, d0 + 0.01));
-    const mx = (p0.x + p1.x) / 2;
-    const my = (p0.y + p1.y) / 2;
-    const cos = Math.cos(tilt);
-    const sin = Math.sin(tilt);
-    const rot = (p: P) => ({
-      x: mx + (p.x - mx) * cos - (p.y - my) * sin,
-      y: my + (p.x - mx) * sin + (p.y - my) * cos,
-    });
-    out.push({ a: rot(p0), b: rot(p1), color, thick });
+  if (total < 0.5) return [pts[0], { x: pts[0].x + 0.5, y: pts[0].y }];
+  const n = Math.max(1, Math.round(total / spacing));
+  const out: P[] = [];
+  let seg = 1;
+  for (let k = 0; k <= n; k++) {
+    const d = (k / n) * total;
+    while (seg < pts.length - 1 && lengths[seg] < d) seg++;
+    const span = lengths[seg] - lengths[seg - 1] || 1;
+    const t = Math.min(1, Math.max(0, (d - lengths[seg - 1]) / span));
+    out.push({ x: pts[seg - 1].x + (pts[seg].x - pts[seg - 1].x) * t, y: pts[seg - 1].y + (pts[seg].y - pts[seg - 1].y) * t });
+  }
+  return out;
+}
+
+/** Backstitches along a smoothed, evenly resampled centre-line, with a little hand-made variation. */
+function stitchStroke(pts: P[], unit: number, color: string, rand: () => number, out: Stitch[]) {
+  const stitchLen = Math.min(9, Math.max(6, unit * 0.58));
+  const gap = Math.max(0.9, stitchLen * 0.13);
+  const thick = Math.min(4.4, Math.max(2.4, unit * 0.29));
+  const path = resample(chaikin(pts), stitchLen + gap);
+  for (let i = 0; i < path.length - 1; i++) {
+    const p0 = path[i];
+    const p1 = path[i + 1];
+    const dx = p1.x - p0.x;
+    const dy = p1.y - p0.y;
+    const len = Math.hypot(dx, dy) || 1;
+    const ux = dx / len;
+    const uy = dy / len;
+    // Leave a tiny gap at the end; wobble length, angle and position by a pixel or two.
+    const l = Math.max(2, len - gap + (rand() - 0.5) * 1.6);
+    const ang = (rand() - 0.5) * 0.08;
+    const vx = ux * Math.cos(ang) - uy * Math.sin(ang);
+    const vy = ux * Math.sin(ang) + uy * Math.cos(ang);
+    const off = (rand() - 0.5) * 0.9;
+    const ax = p0.x + gap * 0.5 * ux - uy * off;
+    const ay = p0.y + gap * 0.5 * uy + ux * off;
+    out.push({ a: { x: ax, y: ay }, b: { x: ax + vx * l, y: ay + vy * l }, color, shade: Math.floor(rand() * SHADES.length), thick });
   }
 }
 
@@ -144,7 +169,7 @@ export function buildStitches(text: string): Stitch[] {
             y: cy + dy + px * Math.sin(angle) + py * Math.cos(angle),
           };
         };
-        for (const stroke of glyph.strokes) stitchStroke(stroke.map(place), unit, color, stitches);
+        for (const stroke of glyph.strokes) stitchStroke(stroke.map(place), unit, color, rand, stitches);
         x += (glyph.width + LETTER_GAP) * unit;
       }
       x += (SPACE_WIDTH - LETTER_GAP) * unit;
@@ -160,66 +185,161 @@ function shade(hex: string, amount: number) {
   return `rgb(${mix(n >> 16)},${mix((n >> 8) & 255)},${mix(n & 255)})`;
 }
 
-/** Off-white woven cotton. */
+/** Linen / aida cloth: fine weave with thread bundles and holes, soft light falloff. */
 export function drawFabric(ctx: CanvasRenderingContext2D) {
   const rand = seededRandom("fabric");
-  ctx.fillStyle = "#efede6";
+  ctx.fillStyle = "#f1ece1";
   ctx.fillRect(0, 0, NOTE_W, NOTE_H);
-  for (let y = 0; y < NOTE_H; y += 3) {
-    ctx.fillStyle = y % 6 === 0 ? "rgba(255,255,255,0.45)" : "rgba(90,80,60,0.05)";
-    ctx.fillRect(0, y, NOTE_W, 1.5);
+
+  // One aida cell: a slightly raised thread bundle with holes at the corners.
+  const tile = document.createElement("canvas");
+  tile.width = tile.height = 6;
+  const t = tile.getContext("2d")!;
+  t.fillStyle = "#ede7da";
+  t.fillRect(0, 0, 6, 6);
+  t.fillStyle = "rgba(255,255,255,0.55)";
+  t.fillRect(1, 1, 4, 2);
+  t.fillStyle = "rgba(255,255,255,0.3)";
+  t.fillRect(1, 3, 4, 1.5);
+  t.fillStyle = "rgba(120,100,70,0.12)";
+  t.fillRect(0, 0, 6, 0.7);
+  t.fillRect(0, 0, 0.7, 6);
+  t.fillStyle = "rgba(90,70,45,0.28)";
+  t.fillRect(0, 0, 1, 1);
+  ctx.save();
+  ctx.globalAlpha = 0.55;
+  ctx.fillStyle = ctx.createPattern(tile, "repeat")!;
+  ctx.fillRect(0, 0, NOTE_W, NOTE_H);
+  ctx.restore();
+
+  // Irregular slubs, like real linen.
+  for (let i = 0; i < 900; i++) {
+    ctx.fillStyle = rand() > 0.5 ? `rgba(255,255,255,${rand() * 0.25})` : `rgba(120,100,70,${rand() * 0.06})`;
+    const horizontal = rand() > 0.5;
+    const len = 4 + rand() * 18;
+    ctx.fillRect(rand() * NOTE_W, rand() * NOTE_H, horizontal ? len : 1, horizontal ? 1 : len);
   }
-  for (let x = 0; x < NOTE_W; x += 3) {
-    ctx.fillStyle = x % 6 === 0 ? "rgba(255,255,255,0.25)" : "rgba(90,80,60,0.04)";
-    ctx.fillRect(x, 0, 1.2, NOTE_H);
+
+  // Soft light from the top left, gently falling off toward the edges.
+  const light = ctx.createRadialGradient(NOTE_W * 0.35, NOTE_H * 0.25, 40, NOTE_W * 0.5, NOTE_H * 0.5, NOTE_W * 0.75);
+  light.addColorStop(0, "rgba(255,255,250,0.28)");
+  light.addColorStop(0.6, "rgba(255,255,250,0)");
+  light.addColorStop(1, "rgba(80,60,35,0.16)");
+  ctx.fillStyle = light;
+  ctx.fillRect(0, 0, NOTE_W, NOTE_H);
+}
+
+// Small per-stitch colour variation: each thread colour has a few close shades.
+const SHADES = [-0.06, -0.02, 0.02, 0.06];
+const SPRITE_LEN = 10; // sprite drawn at this length, then stretched slightly per stitch
+const SPRITE_SCALE = 4; // supersampling for crisp edges
+const sprites = new Map<string, HTMLCanvasElement>();
+let shadowSprite: HTMLCanvasElement | null = null;
+
+/** Pre-rendered thread segment: rounded floss with a side highlight, darker ends and faint twist. */
+function stitchSprite(color: string, shadeIdx: number, thick: number) {
+  const key = `${color}|${shadeIdx}|${thick.toFixed(1)}`;
+  const cached = sprites.get(key);
+  if (cached) return cached;
+  const h = thick + 2;
+  const c = document.createElement("canvas");
+  c.width = SPRITE_LEN * SPRITE_SCALE;
+  c.height = Math.ceil(h * SPRITE_SCALE);
+  const g = c.getContext("2d")!;
+  g.scale(SPRITE_SCALE, SPRITE_SCALE);
+  const base = shade(color, SHADES[shadeIdx]);
+  const y0 = (h - thick) / 2;
+
+  g.beginPath();
+  g.roundRect(0.4, y0, SPRITE_LEN - 0.8, thick, thick / 2);
+  g.clip();
+  // Across the thread: light along one side, darker along the other.
+  const across = g.createLinearGradient(0, y0, 0, y0 + thick);
+  across.addColorStop(0, shade(color, SHADES[shadeIdx] + 0.42));
+  across.addColorStop(0.35, base);
+  across.addColorStop(1, shade(color, SHADES[shadeIdx] - 0.32));
+  g.fillStyle = across;
+  g.fillRect(0, 0, SPRITE_LEN, h);
+  // Along the thread: darker where it dives into the fabric.
+  const along = g.createLinearGradient(0, 0, SPRITE_LEN, 0);
+  along.addColorStop(0, "rgba(30,20,10,0.35)");
+  along.addColorStop(0.22, "rgba(30,20,10,0)");
+  along.addColorStop(0.78, "rgba(30,20,10,0)");
+  along.addColorStop(1, "rgba(30,20,10,0.35)");
+  g.fillStyle = along;
+  g.fillRect(0, 0, SPRITE_LEN, h);
+  // Faint diagonal twist of the strands.
+  g.strokeStyle = "rgba(0,0,0,0.16)";
+  g.lineWidth = 0.35;
+  for (let x = -thick; x < SPRITE_LEN + thick; x += 1.7) {
+    g.beginPath();
+    g.moveTo(x, y0 + thick);
+    g.lineTo(x + thick * 0.8, y0);
+    g.stroke();
   }
-  for (let i = 0; i < 3000; i++) {
-    ctx.fillStyle = `rgba(110,95,70,${rand() * 0.07})`;
-    ctx.fillRect(rand() * NOTE_W, rand() * NOTE_H, 1 + rand() * 2, 1);
+  g.strokeStyle = "rgba(255,255,255,0.18)";
+  for (let x = -thick + 0.6; x < SPRITE_LEN + thick; x += 1.7) {
+    g.beginPath();
+    g.moveTo(x, y0 + thick * 0.55);
+    g.lineTo(x + thick * 0.45, y0);
+    g.stroke();
   }
+  sprites.set(key, c);
+  return c;
+}
+
+function getShadowSprite() {
+  if (shadowSprite) return shadowSprite;
+  const c = document.createElement("canvas");
+  c.width = (SPRITE_LEN + 4) * SPRITE_SCALE;
+  c.height = 8 * SPRITE_SCALE;
+  const g = c.getContext("2d")!;
+  g.scale(SPRITE_SCALE, SPRITE_SCALE);
+  g.filter = "blur(0.6px)";
+  g.fillStyle = "rgba(60,40,20,0.32)";
+  g.beginPath();
+  g.roundRect(2, 2.6, SPRITE_LEN, 2.8, 1.4);
+  g.fill();
+  shadowSprite = c;
+  return c;
 }
 
 export function drawStitch(ctx: CanvasRenderingContext2D, s: Stitch) {
   const dx = s.b.x - s.a.x;
   const dy = s.b.y - s.a.y;
   const len = Math.hypot(dx, dy) || 1;
-  const nx = -dy / len;
-  const ny = dx / len;
-  ctx.lineCap = "round";
+  const angle = Math.atan2(dy, dx);
+  const ux = dx / len;
+  const uy = dy / len;
 
-  // Shadow where the thread sits on the fabric.
-  ctx.strokeStyle = "rgba(60,45,30,0.28)";
-  ctx.lineWidth = s.thick + 1;
-  ctx.beginPath();
-  ctx.moveTo(s.a.x + 0.8, s.a.y + 1.3);
-  ctx.lineTo(s.b.x + 0.8, s.b.y + 1.3);
-  ctx.stroke();
+  // Needle holes just beyond each end, where the thread goes through the cloth.
+  ctx.fillStyle = "rgba(70,50,30,0.38)";
+  for (const [hx, hy] of [
+    [s.a.x - ux * 0.6, s.a.y - uy * 0.6],
+    [s.b.x + ux * 0.6, s.b.y + uy * 0.6],
+  ]) {
+    ctx.beginPath();
+    ctx.arc(hx, hy, 0.9, 0, Math.PI * 2);
+    ctx.fill();
+  }
 
-  // Thread body.
-  ctx.strokeStyle = s.color;
-  ctx.lineWidth = s.thick;
-  ctx.beginPath();
-  ctx.moveTo(s.a.x, s.a.y);
-  ctx.lineTo(s.b.x, s.b.y);
-  ctx.stroke();
+  const mx = (s.a.x + s.b.x) / 2;
+  const my = (s.a.y + s.b.y) / 2;
+  // Tiny soft shadow, offset down-right in page space.
+  const sh = getShadowSprite();
+  ctx.save();
+  ctx.translate(mx + 0.5, my + 0.8);
+  ctx.rotate(angle);
+  ctx.drawImage(sh, -(len + 4) / 2, -4 * (s.thick / 2.8), len + 4, 8 * (s.thick / 2.8));
+  ctx.restore();
 
-  // Twisted strands: a light sheen on one side, a darker groove on the other.
-  const inset = 0.15;
-  const ax = s.a.x + dx * inset;
-  const ay = s.a.y + dy * inset;
-  const bx = s.b.x - dx * inset;
-  const by = s.b.y - dy * inset;
-  ctx.lineWidth = Math.max(0.8, s.thick * 0.22);
-  ctx.strokeStyle = shade(s.color, 0.4);
-  ctx.beginPath();
-  ctx.moveTo(ax - nx * s.thick * 0.18, ay - ny * s.thick * 0.18);
-  ctx.lineTo(bx - nx * s.thick * 0.18, by - ny * s.thick * 0.18);
-  ctx.stroke();
-  ctx.strokeStyle = shade(s.color, -0.35);
-  ctx.beginPath();
-  ctx.moveTo(ax + nx * s.thick * 0.25, ay + ny * s.thick * 0.25);
-  ctx.lineTo(bx + nx * s.thick * 0.25, by + ny * s.thick * 0.25);
-  ctx.stroke();
+  const sprite = stitchSprite(s.color, s.shade, s.thick);
+  const h = s.thick + 2;
+  ctx.save();
+  ctx.translate(mx, my);
+  ctx.rotate(angle);
+  ctx.drawImage(sprite, -len / 2, -h / 2, len, h);
+  ctx.restore();
 }
 
 /**
@@ -235,7 +355,7 @@ export function drawNeedle(ctx: CanvasRenderingContext2D, tip: P, lift: number, 
 
   // Thread hanging from the eye.
   ctx.strokeStyle = color;
-  ctx.lineWidth = 2;
+  ctx.lineWidth = 1.5;
   ctx.lineCap = "round";
   ctx.beginPath();
   ctx.moveTo(eye.x, eye.y);

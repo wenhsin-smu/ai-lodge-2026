@@ -14,8 +14,8 @@ import {
 
 const MAX_CHARS = 60;
 // The whole note stitches in about this long, however long it is.
-const STITCH_SECONDS = 5;
-const NEEDLE_LIFT = 16;
+const STITCH_SECONDS = 1.8;
+const NEEDLE_LIFT = 10;
 
 type Phase = "edit" | "stitching" | "done";
 
@@ -123,7 +123,7 @@ export default function NoteComposer({ onStitched }: { onStitched: (image: strin
         </>
       ) : (
         <>
-          <div className="viewfinder" style={{ background: "#efede6" }}>
+          <div className="hoop-frame">
             <canvas ref={canvasRef} width={NOTE_W} height={NOTE_H} />
           </div>
           <div className="field-row">
