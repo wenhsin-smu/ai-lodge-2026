@@ -69,7 +69,7 @@ All AI calls run in Next.js server routes (`app/api/*`, Vercel serverless functi
 ## External Tools & Datasets
 
 - [Next.js 16](https://nextjs.org) (App Router, TypeScript), deployed on [Vercel](https://vercel.com)
-- [Supabase](https://supabase.com): Auth (magic links), Postgres + Row Level Security, Storage (private bucket, signed URLs), Realtime
+- [Supabase](https://supabase.com): Auth (email + password, or magic links), Postgres + Row Level Security, Storage (private bucket, signed URLs), Realtime
 - [Anthropic API](https://docs.anthropic.com) via `@anthropic-ai/sdk` (vision + text, structured outputs)
 - [zod](https://zod.dev) for schema validation
 - [MediaPipe Tasks Vision](https://ai.google.dev/edge/mediapipe/solutions/vision/hand_landmarker) HandLandmarker (runs entirely in the browser; Google's pretrained hand landmark model)

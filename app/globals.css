@@ -193,6 +193,7 @@ button.small {
 
 input[type="text"],
 input[type="email"],
+input[type="password"],
 input:not([type]),
 select,
 textarea {
@@ -1044,6 +1045,11 @@ body.pip .widget-window .window-body {
   to {
     opacity: 0;
   }
+}
+
+/* Sign-in: the magic link is a quiet secondary option. */
+.login-magic {
+  align-self: flex-start;
 }
 
 /* ---------------------------------------------------------------- app shell: rail, top bar, one screen */
