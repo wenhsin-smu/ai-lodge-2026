@@ -321,6 +321,8 @@ export function BoothProvider({ userId, children }: { userId: string; children: 
         await supabase.storage.from("posts").remove([path]);
         throw new Error(`Couldn't save the post: ${ins.error.message}`);
       }
+      // Show the post to its author straight away (as "Checking…") while moderation runs.
+      void loadGroupData();
       // Moderation decides whether friends ever see it. Any failure leaves it held.
       let result: SendResult = {
         status: "held",

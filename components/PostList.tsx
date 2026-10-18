@@ -68,8 +68,8 @@ function PostFooter({ post, mine, covered, compact }: { post: Post; mine: boolea
       <div className="post-meta">
         <b>{nameOf(post.user_id)}</b> <span className="hint">{time}</span>
         {new Date(post.created_at).getHours() < 4 && <span className="badge badge-night">still up?</span>}
-        {mine && post.status === "pending" && <span className="badge">checking...</span>}
-        {mine && post.status === "held" && <span className="badge badge-held">not shared</span>}
+        {mine && post.status === "pending" && <span className="badge" title="Only you can see this until it has been checked">Checking…</span>}
+        {mine && post.status === "held" && <span className="badge badge-held">Not shared</span>}
       </div>
       {!covered && post.caption && <div className="post-caption">{post.caption}</div>}
       {mine && post.status === "held" && post.moderation_reason && !compact && (
