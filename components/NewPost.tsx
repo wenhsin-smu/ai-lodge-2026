@@ -2,11 +2,12 @@
 
 import { useEffect, useState } from "react";
 import FogBooth from "@/components/FogBooth";
+import BedazzleComposer from "@/components/BedazzleComposer";
 import NoteComposer from "@/components/NoteComposer";
-import { useBooth, type PostKind } from "@/components/BoothProvider";
+import { useBooth, type NoteStyle, type PostKind } from "@/components/BoothProvider";
 
-type Tab = "photo" | "fog" | "note";
-type Draft = { image: string; kind: PostKind; noteText?: string };
+type Tab = "photo" | "fog" | "note" | "gems";
+type Draft = { image: string; kind: PostKind; noteText?: string; style?: NoteStyle };
 
 export default function NewPost() {
   const [tab, setTab] = useState<Tab>("photo");
@@ -19,11 +20,21 @@ export default function NewPost() {
         <Tab label="Photo" tone="green" selected={tab === "photo"} onSelect={() => setTab("photo")} />
         <Tab label="Fog glass" tone="pink" selected={tab === "fog"} onSelect={() => setTab("fog")} />
         <Tab label="Stitched note" tone="blue" selected={tab === "note"} onSelect={() => setTab("note")} />
+        <Tab label="Bedazzled" tone="pink" selected={tab === "gems"} onSelect={() => setTab("gems")} />
       </menu>
       <div className="window" role="tabpanel">
         <div className="window-body stack">
           {/* Keyed by tab so switching modes restarts the camera with or without the mic. */}
-          {tab !== "note" ? (
+          {tab === "gems" ? (
+            !draft && (
+              <BedazzleComposer
+                onCreated={(image, noteText) => {
+                  setLastResult(null);
+                  setDraft({ image, kind: "note", noteText, style: "bedazzled" });
+                }}
+              />
+            )
+          ) : tab !== "note" ? (
             <FogBooth
               key={tab}
               fog={tab === "fog"}
@@ -38,7 +49,7 @@ export default function NewPost() {
               <NoteComposer
                 onStitched={(image, noteText) => {
                   setLastResult(null);
-                  setDraft({ image, kind: "note", noteText });
+                  setDraft({ image, kind: "note", noteText, style: "stitched" });
                 }}
               />
             )
@@ -106,7 +117,13 @@ function SendPreview({
   async function send() {
     setSending(true);
     try {
-      const result = await sendPost({ image: draft.image, kind: draft.kind, caption, noteText: draft.noteText });
+      const result = await sendPost({
+        image: draft.image,
+        kind: draft.kind,
+        caption,
+        noteText: draft.noteText,
+        style: draft.style,
+      });
       onDone(result.status === "approved", result.status === "approved" ? "Sent! Your friends can scratch to reveal it." : result.message);
     } catch (e) {
       onDone(false, e instanceof Error ? e.message : "Couldn't send.");

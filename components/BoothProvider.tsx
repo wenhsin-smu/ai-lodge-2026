@@ -11,6 +11,14 @@ import { createClient } from "@/utils/supabase/client";
 export type Profile = { id: string; display_name: string };
 export type Group = { id: string; name: string; invite_code: string };
 export type PostKind = "fog" | "photo" | "note";
+/** Visual style of a note post, kept in the image file name (no schema change). */
+export type NoteStyle = "stitched" | "bedazzled";
+
+/** Display style of a post: Photo / Fog / Stitched / Bedazzled. */
+export function postStyle(post: { kind: PostKind; image_path: string }) {
+  if (post.kind === "note") return post.image_path.endsWith(".bedazzled.jpg") ? "Bedazzled" : "Stitched";
+  return post.kind === "fog" ? "Fog" : "Photo";
+}
 export type Post = {
   id: string;
   group_id: string;
@@ -55,7 +63,7 @@ type BoothState = {
   joinGroup: (code: string) => Promise<void>;
   leaveGroup: () => Promise<void>;
   renameMe: (name: string) => Promise<void>;
-  sendPost: (p: { image: string; kind: PostKind; caption?: string; noteText?: string }) => Promise<SendResult>;
+  sendPost: (p: { image: string; kind: PostKind; caption?: string; noteText?: string; style?: NoteStyle }) => Promise<SendResult>;
   deletePost: (post: Post) => Promise<void>;
   reveal: (postId: string) => Promise<void>;
   report: (postId: string, reason: string) => Promise<void>;
@@ -301,10 +309,10 @@ export function BoothProvider({ userId, children }: { userId: string; children: 
       setMe((m) => (m ? { ...m, display_name: clean } : m));
       setMembers((list) => list.map((m) => (m.id === userId ? { ...m, display_name: clean } : m)));
     },
-    sendPost: async ({ image, kind, caption, noteText }) => {
+    sendPost: async ({ image, kind, caption, noteText, style }) => {
       if (!groupId) throw new Error("Join or create a group first.");
       const id = crypto.randomUUID();
-      const path = `${groupId}/${userId}/${id}.jpg`;
+      const path = `${groupId}/${userId}/${id}${style === "bedazzled" ? ".bedazzled" : ""}.jpg`;
       const blob = await (await fetch(image)).blob();
       const up = await supabase.storage.from("posts").upload(path, blob, { contentType: "image/jpeg" });
       if (up.error) throw new Error(`Upload failed: ${up.error.message}`);

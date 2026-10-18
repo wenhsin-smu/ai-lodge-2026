@@ -1,6 +1,7 @@
 // Turns typed text into embroidery: lays out the letters, splits each stroke
 // into overlapping slanted stitches, and draws fabric, stitches and the needle.
 
+import { chaikin, fitLayout, resample, seededRandom, wordWidth as fontWordWidth, type LayoutOptions } from "@/lib/notePaths";
 import { GLYPHS, LETTER_GAP, SPACE_WIDTH } from "@/lib/stitchFont";
 
 export const NOTE_W = 640;
@@ -11,94 +12,24 @@ const MARGIN = 40;
 const THREADS = ["#2b3fa8", "#c2338f", "#13915a", "#e8402f", "#5b5b60", "#e07b12"];
 
 type P = { x: number; y: number };
+
+const STITCH_LAYOUT: LayoutOptions = {
+  glyphs: GLYPHS,
+  letterGap: LETTER_GAP,
+  spaceWidth: SPACE_WIDTH,
+  lineFactor: 1.55,
+  width: NOTE_W,
+  height: NOTE_H,
+  margin: MARGIN,
+};
 /** One backstitch: from a to b (where the thread goes in and out of the fabric). */
 export type Stitch = { a: P; b: P; color: string; shade: number; thick: number };
-/** Small seeded random generator so the same note always stitches the same way. */
-function seededRandom(seed: string) {
-  let h = 1779033703;
-  for (let i = 0; i < seed.length; i++) h = Math.imul(h ^ seed.charCodeAt(i), 3432918353);
-  return () => {
-    h = Math.imul(h ^ (h >>> 15), h | 1);
-    h ^= h + Math.imul(h ^ (h >>> 7), h | 61);
-    return ((h ^ (h >>> 14)) >>> 0) / 4294967296;
-  };
-}
-
 export function normalizeNote(text: string) {
   return text.toUpperCase().replace(/[‘’`]/g, "'").replace(/&/g, "+").replace(/\s+/g, " ").trim();
 }
 
 export function unsupportedChars(text: string) {
   return [...new Set([...normalizeNote(text)].filter((c) => c !== " " && !GLYPHS[c]))];
-}
-
-function wordWidth(word: string) {
-  const chars = [...word].filter((c) => GLYPHS[c]);
-  if (chars.length === 0) return 0;
-  return chars.reduce((w, c) => w + GLYPHS[c].width, 0) + LETTER_GAP * (chars.length - 1);
-}
-
-/** Wraps words into lines for a given cap height, or null if it doesn't fit. */
-function layout(words: string[], unit: number) {
-  const maxW = NOTE_W - MARGIN * 2;
-  const lines: string[][] = [];
-  let line: string[] = [];
-  let lineW = 0;
-  for (const word of words) {
-    const w = wordWidth(word) * unit;
-    if (w > maxW) return null;
-    const next = line.length ? lineW + SPACE_WIDTH * unit + w : w;
-    if (next > maxW && line.length) {
-      lines.push(line);
-      line = [word];
-      lineW = w;
-    } else {
-      line.push(word);
-      lineW = next;
-    }
-  }
-  if (line.length) lines.push(line);
-  const lineHeight = unit * 10 * 1.55;
-  const blockH = lines.length * lineHeight - unit * 10 * 0.55;
-  return blockH <= NOTE_H - MARGIN * 2 ? { lines, lineHeight, blockH } : null;
-}
-
-/** Chaikin corner cutting: rounds the path gently while keeping its endpoints. */
-function chaikin(pts: P[], iterations = 2, ratio = 0.07): P[] {
-  let out = pts;
-  for (let it = 0; it < iterations && out.length > 2; it++) {
-    const next: P[] = [out[0]];
-    for (let i = 0; i < out.length - 1; i++) {
-      const a = out[i];
-      const b = out[i + 1];
-      next.push({ x: a.x + (b.x - a.x) * ratio, y: a.y + (b.y - a.y) * ratio });
-      next.push({ x: a.x + (b.x - a.x) * (1 - ratio), y: a.y + (b.y - a.y) * (1 - ratio) });
-    }
-    next.push(out[out.length - 1]);
-    out = next;
-  }
-  return out;
-}
-
-/** Points at an even spacing along a polyline (so stitches are equal length on curves too). */
-function resample(pts: P[], spacing: number): P[] {
-  const lengths = [0];
-  for (let i = 1; i < pts.length; i++) {
-    lengths.push(lengths[i - 1] + Math.hypot(pts[i].x - pts[i - 1].x, pts[i].y - pts[i - 1].y));
-  }
-  const total = lengths[lengths.length - 1];
-  if (total < 0.5) return [pts[0], { x: pts[0].x + 0.5, y: pts[0].y }];
-  const n = Math.max(1, Math.round(total / spacing));
-  const out: P[] = [];
-  let seg = 1;
-  for (let k = 0; k <= n; k++) {
-    const d = (k / n) * total;
-    while (seg < pts.length - 1 && lengths[seg] < d) seg++;
-    const span = lengths[seg] - lengths[seg - 1] || 1;
-    const t = Math.min(1, Math.max(0, (d - lengths[seg - 1]) / span));
-    out.push({ x: pts[seg - 1].x + (pts[seg].x - pts[seg - 1].x) * t, y: pts[seg - 1].y + (pts[seg].y - pts[seg - 1].y) * t });
-  }
-  return out;
 }
 
 /** Backstitches along a smoothed, evenly resampled centre-line, with a little hand-made variation. */
@@ -130,17 +61,14 @@ function stitchStroke(pts: P[], unit: number, color: string, rand: () => number,
 /** Builds every stitch for the note, in sewing order. */
 export function buildStitches(text: string): Stitch[] {
   const note = normalizeNote(text);
+  const wordWidth = (w: string) => fontWordWidth(w, STITCH_LAYOUT);
   const words = note.split(" ").filter((w) => wordWidth(w) > 0);
   if (words.length === 0) return [];
   const rand = seededRandom(note);
 
-  let fit: NonNullable<ReturnType<typeof layout>> | null = null;
-  let unit = 16;
-  for (; unit >= 2.4; unit -= 0.4) {
-    fit = layout(words, unit);
-    if (fit) break;
-  }
+  const fit = fitLayout(words, 16, STITCH_LAYOUT);
   if (!fit) return [];
+  const unit = fit.unit;
 
   const stitches: Stitch[] = [];
   let lastColor = "";

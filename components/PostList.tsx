@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import ScratchCard from "@/components/ScratchCard";
-import { useBooth, type Post } from "@/components/BoothProvider";
+import { postStyle, useBooth, type Post } from "@/components/BoothProvider";
 
 type Props = {
   limit?: number;
@@ -51,6 +51,7 @@ export default function PostList({ limit, eraserSize, previewAsFriend = false, c
               else void reveal(p.id);
             }}
             footer={<PostFooter post={p} mine={mine} covered={covered} compact={compact} />}
+            twinkle={postStyle(p) === "Bedazzled"}
           />
         );
       })}

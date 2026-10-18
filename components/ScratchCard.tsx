@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import GemTwinkle from "@/components/GemTwinkle";
 
 const CW = 320;
 const CH = 240;
@@ -14,10 +15,12 @@ type Props = {
   eraserSize: number;
   onRevealed: () => void;
   footer?: React.ReactNode;
+  /** Bedazzled posts get a rare sparkle once revealed. */
+  twinkle?: boolean;
 };
 
 /** A post image under silver scratch-card foil. Scratch about 60% and the rest reveals itself. */
-export default function ScratchCard({ postId, imageUrl, author, covered, eraserSize, onRevealed, footer }: Props) {
+export default function ScratchCard({ postId, imageUrl, author, covered, eraserSize, onRevealed, footer, twinkle = false }: Props) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const last = useRef<{ x: number; y: number } | null>(null);
   const moves = useRef(0);
@@ -73,6 +76,7 @@ export default function ScratchCard({ postId, imageUrl, author, covered, eraserS
         ) : (
           <div style={{ width: "100%", height: "100%", background: "#ddd" }} />
         )}
+        {twinkle && !covered && <GemTwinkle />}
         {covered && (
           <canvas
             ref={canvasRef}
