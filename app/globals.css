@@ -1063,6 +1063,34 @@ body.pip .widget-window .window-body {
   display: none;
 }
 
+/* ---------------------------------------------------------------- photo filters */
+
+.filter-chips {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+/* A brief white flash when a photo is taken (skipped with reduced motion). */
+.shutter-flash {
+  position: absolute;
+  inset: 0;
+  z-index: 5;
+  background: #fff;
+  pointer-events: none;
+  opacity: 0;
+  animation: shutter-flash 0.35s ease-out;
+}
+
+@keyframes shutter-flash {
+  from {
+    opacity: 0.95;
+  }
+  to {
+    opacity: 0;
+  }
+}
+
 /* ---------------------------------------------------------------- motion + small screens */
 
 @media (prefers-reduced-motion: reduce) {

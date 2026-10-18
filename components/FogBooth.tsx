@@ -4,6 +4,7 @@ import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { createBlowDetector, type BlowDetector } from "@/lib/blowDetector";
 import { FingerPen, PEN, type Pt } from "@/lib/fingerPen";
 import { createHandTracker, type HandTracker } from "@/lib/handTracker";
+import { FILTERS, applyFilter, type FilterId } from "@/lib/photoFilters";
 
 const W = 640;
 const H = 480;
@@ -13,6 +14,15 @@ const SUSTAIN_MS = 200;
 // Average brightness (0-255) below which hand tracking gets unreliable.
 const DARK_LUMA = 55;
 const HINT_KEY = "studybooth.pinchHintSeen";
+const FILTER_KEY = "studybooth.photoFilter";
+
+function readSavedFilter(): FilterId {
+  try {
+    const saved = window.localStorage.getItem(FILTER_KEY);
+    if (FILTERS.some((f) => f.id === saved)) return saved as FilterId;
+  } catch {}
+  return "none";
+}
 const noSubscribe = () => () => {};
 const readDebugFlag = () => new URLSearchParams(window.location.search).has("debug");
 
@@ -63,7 +73,17 @@ export default function FogBooth({ fog, hidden = false, onCapture }: Props) {
   const [tooDark, setTooDark] = useState(false);
   const [showHint, setShowHint] = useState(false);
   const debug = useSyncExternalStore(noSubscribe, readDebugFlag, () => false);
-  const [digicam, setDigicam] = useState(false);
+  // Photo filter, remembered for this browser only.
+  const [filter, setFilterState] = useState<FilterId>(() => (typeof window === "undefined" ? "none" : readSavedFilter()));
+  const filterRef = useRef<FilterId>(filter);
+  const [flashKey, setFlashKey] = useState(0);
+  const setFilter = (id: FilterId) => {
+    setFilterState(id);
+    filterRef.current = id;
+    try {
+      window.localStorage.setItem(FILTER_KEY, id);
+    } catch {}
+  };
 
   useEffect(() => {
     thresholdRef.current = threshold;
@@ -186,12 +206,15 @@ export default function FogBooth({ fog, hidden = false, onCapture }: Props) {
       blurCtx.drawImage(fogRef.current!, 0, 0);
       ctx.drawImage(blurRef.current!, 0, 0);
 
+      // 5. Photo mode: live filter, so the preview is exactly what gets captured.
+      if (!fog) applyFilter(canvas, filterRef.current);
+
       frame = requestAnimationFrame(tick);
     };
 
     frame = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(frame);
-  }, [running]);
+  }, [running, fog]);
 
   // Finger writing: hand detection runs only while fog mode is open and finger mode is on.
   const fingerActive = running && fog && !hidden && mode === "finger" && handStatus === "ready";
@@ -346,8 +369,17 @@ export default function FogBooth({ fog, hidden = false, onCapture }: Props) {
   function takePhoto() {
     const canvas = canvasRef.current;
     if (!canvas) return;
-    const source = !fog && digicam ? digicamFilter(canvas) : canvas;
-    onCapture(source.toDataURL("image/jpeg", 0.85), fog && fogUsedRef.current ? "fog" : "photo");
+    // The canvas already shows the filtered frame, so the photo matches the preview exactly.
+    const image = canvas.toDataURL("image/jpeg", 0.88);
+    const kind = fog && fogUsedRef.current ? "fog" : "photo";
+    const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    if (fog || reduceMotion) {
+      onCapture(image, kind);
+      return;
+    }
+    // Let the shutter flash show on the viewfinder before switching to the preview.
+    setFlashKey((k) => k + 1);
+    window.setTimeout(() => onCapture(image, kind), 180);
   }
 
   return (
@@ -402,6 +434,7 @@ export default function FogBooth({ fog, hidden = false, onCapture }: Props) {
         <span className="viewfinder-corner bl" />
         <span className="viewfinder-corner br" />
         <div ref={cursorRef} className="pen-cursor" aria-hidden="true" />
+        {flashKey > 0 && <div key={flashKey} className="shutter-flash" aria-hidden="true" />}
         {debug && fingerActive && (
           <>
             <canvas ref={debugCanvasRef} width={W} height={H} className="debug-overlay" />
@@ -419,11 +452,23 @@ export default function FogBooth({ fog, hidden = false, onCapture }: Props) {
 
       {running && !fog && (
         <div className="field-row">
+          <span>Filter</span>
+          <div className="filter-chips" role="radiogroup" aria-label="Photo filter">
+            {FILTERS.map((f) => (
+              <button
+                key={f.id}
+                role="radio"
+                aria-checked={filter === f.id}
+                className={filter === f.id ? "small pill-pink" : "small"}
+                onClick={() => setFilter(f.id)}
+              >
+                {f.label}
+              </button>
+            ))}
+          </div>
           <button className="pill-green" onClick={takePhoto}>
             Take photo
           </button>
-          <input id="digicam" type="checkbox" checked={digicam} onChange={(e) => setDigicam(e.target.checked)} />
-          <label htmlFor="digicam">Digicam look (grain + date stamp)</label>
         </div>
       )}
 
@@ -501,42 +546,6 @@ function wipe(ctx: CanvasRenderingContext2D, from: Point, to: Point) {
   ctx.lineTo(to.x === from.x && to.y === from.y ? to.x + 0.1 : to.x, to.y);
   ctx.stroke();
   ctx.globalCompositeOperation = "source-over";
-}
-
-/** Early-2000s digital camera look: warm tint, grain, soft vignette, orange date stamp. */
-function digicamFilter(source: HTMLCanvasElement) {
-  const out = document.createElement("canvas");
-  out.width = W;
-  out.height = H;
-  const ctx = out.getContext("2d")!;
-  ctx.filter = "saturate(1.25) contrast(1.08) sepia(0.15)";
-  ctx.drawImage(source, 0, 0);
-  ctx.filter = "none";
-
-  const img = ctx.getImageData(0, 0, W, H);
-  for (let i = 0; i < img.data.length; i += 4) {
-    const n = (Math.random() - 0.5) * 34;
-    img.data[i] = Math.min(255, Math.max(0, img.data[i] + n + 6));
-    img.data[i + 1] = Math.min(255, Math.max(0, img.data[i + 1] + n));
-    img.data[i + 2] = Math.min(255, Math.max(0, img.data[i + 2] + n - 6));
-  }
-  ctx.putImageData(img, 0, 0);
-
-  const v = ctx.createRadialGradient(W / 2, H / 2, H * 0.35, W / 2, H / 2, H * 0.85);
-  v.addColorStop(0, "rgba(0,0,0,0)");
-  v.addColorStop(1, "rgba(0,0,0,0.35)");
-  ctx.fillStyle = v;
-  ctx.fillRect(0, 0, W, H);
-
-  const d = new Date();
-  const stamp = `'${String(d.getFullYear()).slice(2)} ${String(d.getMonth() + 1).padStart(2, " ")} ${String(d.getDate()).padStart(2, " ")}`;
-  ctx.font = "bold 30px 'Courier New', monospace";
-  ctx.textAlign = "right";
-  ctx.shadowColor = "rgba(255,120,0,0.9)";
-  ctx.shadowBlur = 6;
-  ctx.fillStyle = "#ff9a1f";
-  ctx.fillText(stamp, W - 26, H - 26);
-  return out;
 }
 
 /** Wipes a smooth quadratic curve through the fog (finger strokes). */
