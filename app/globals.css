@@ -1793,6 +1793,25 @@ button.group-tile {
   font-weight: 600;
 }
 
+/* On wide screens the tiles move into the empty space left of the My Group
+   card, stacked, lined up with its top. */
+@media (min-width: 1140px) {
+  .group-actions {
+    position: absolute;
+    top: 0;
+    right: calc(100% + 16px);
+    width: 150px;
+    grid-template-columns: 1fr;
+  }
+  button.group-tile {
+    min-height: 84px;
+    padding: 12px 14px;
+  }
+  .group-tile b {
+    font-size: 14px;
+  }
+}
+
 input.code-input {
   font-size: 24px;
   letter-spacing: 6px;

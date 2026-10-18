@@ -1,96 +1,118 @@
 # Study Booth
 
-**Study apart, together.** A laptop web app where small groups of student friends share playful, handmade-looking photos and notes while they study in different places. It lives in a tiny always-on-top corner window, so staying connected never means picking up your phone.
+**Study apart, together.** A laptop web app where small groups of student friends send each other playful, handmade-looking photos and notes while they study in different places. A calm little widget floats over your notes, so staying connected never means picking up your phone.
 
 Built for the AI Lodge Hackathon (track: Projects for Daily Life).
 
 ---
 
-## Problem Statement
+## 1. Problem Statement
 
-Studying alone is lonely, and the usual fix, a group chat on your phone, is the biggest distraction there is.
+**What problem?** Studying alone is lonely, and the usual fix makes it worse. When students study by themselves they lose the quiet motivation of a friend at the next desk, so they reach for the group chat on their phone. One "just checking" turns into scrolling, and the study session is gone.
 
-- [X]% of students we surveyed (n = [N]) study alone most evenings.
-- [X]% said they feel less motivated studying alone than with friends.
-- [X]% said they pick up their phone "just to check messages" while studying; [X]% said that turns into scrolling.
-- [Quote from a surveyed student]
+**Who experiences it?** Secondary and university students who study at home, in different places or on different schedules from their friends: commuters, students in separate schools or cities, and anyone revising late at night.
 
-Students want the feeling of studying side by side, without an infinite feed or a phone in their hand.
+**Why is it worth solving?** Studying alongside friends makes it easier to start and to keep going, but the tools students use to stay in touch (phones, social feeds, group chats) are built to hold attention, not to give it back. Students need the feeling of studying side by side without an infinite feed, without notifications, and without a phone in their hand.
 
-## Solution Overview
+<!-- Optional: add your own survey numbers here, e.g. "X% of N students we asked study alone most evenings". -->
 
-Study Booth is a bright, glossy "gadget desk" in the browser with a calm little widget that floats over your notes (Document Picture-in-Picture). You and your friends form a private, invite-only group. Every so often someone sends something small and handmade: a photo, a message finger-written on fogged glass, or a note written in curly script on a pretty paper card. It arrives on everyone's widget under silver scratch-card foil, and friends scratch it off to reveal it.
+## 2. Solution Overview
 
-AI works quietly in the background, always server-side:
+Study Booth is a bright, glossy "gadget desk" in the browser. You and a few friends form a private, invite-only group. Every so often someone sends something small and handmade: a photo with a retro filter, a message finger-written on fogged-up camera glass, or a note in curly script on a stamped paper card. It arrives covered in silver scratch-card foil, and friends scratch it off to reveal it. It's a small moment of connection, then everyone goes back to work.
 
-- it reads handwriting and blocks mean or unsafe posts before anyone sees them,
-- it suggests captions that fit your study session,
-- it occasionally nudges the whole group ("Everyone's past 2 hours, show your desk!"),
-- it writes a short weekly story from real study stats.
+It stays on the laptop on purpose. A compact study widget pops out as an always-on-top mini window over your notes, with a study timer and the last three posts. There is no endless feed: only the last 24 hours, and focus mode hides new posts until your timer ends.
 
-## Key Features
+AI works quietly in the background, always on the server:
 
-- **Private friend groups.** Email magic-link sign-in, groups with 6-character invite codes, no public profiles. Row Level Security on every table and the storage bucket.
-- **Three ways to post** (always user-initiated, always with a preview and a retake button):
-  - **Photo:** a normal webcam snapshot.
-  - **Fog glass:** blow into the mic to fog the lens glass of the little booth camera, then write in it with your **finger** or the mouse/trackpad. Finger writing runs entirely on-device: **pinch** thumb and index finger to write, open your hand to lift the pen. The fingertip is smoothed with a One Euro filter, strokes are drawn as smooth curves, and only the middle 70% of the camera view is needed. Add `?debug=1` to the URL to see the hand landmarks, pen state, FPS and confidence.
-  - **Card note:** type a few words and watch them appear, as you type, in a curly handwritten script on a paper card. Choose the paper colour (pink, cream, baby blue, lilac, mint), the text size and the alignment, then pick a rubber stamp (star, heart, smiley, moon, dots) and click anywhere on the card to press it, with a faint preview under the pointer (arrow keys and Enter work too; Undo and Clear are there if you change your mind). The cream card uses hollow blue lettering like a vintage postcard.
-  - **Photo filters**, previewed live before you shoot: None, **Digicam** (soft compact-camera look, hot highlights, colour fringing, grain and an orange seven-segment date stamp), **Film** (warm, faded) and **B&W**. A quick white flash plays when you take the photo, and your last filter is remembered.
-- **Landing page.** Signed-out visitors see "Study Booth" fill in dot by dot, marquee style, in black script, then the tagline, feature chips and a centred sign-in card float in over drifting glossy bubbles (pure CSS; it appears complete with reduced motion).
-- **One screen at a time.** A slim nav rail (Home, New post, Study, Weekly Story, My Group) that becomes a bottom tab bar in a narrow window, and a top bar with a study timer chip and your avatar menu. Every screen has its own URL (`/`, `/study`, `/story`, `/group`, and `?new=1` for the New post modal), so refresh and Back work.
-- **Groups and settings.** My Group shows your groups, the invite code (with Copy) and members, with separate Join a group and Start a new group dialogs. Settings (from the avatar menu) is where you change your name and set or change your password.
-- **Home: stories and feed.** A row of friend bubbles (a pastel ring means unseen posts from the last 24 hours, grey means you've seen them all) opens a full-screen viewer you step through with taps or arrow keys. Below it, a centred feed of cards, newest first, each tagged Photo / Fog / Card with a ⋯ menu to report or delete. Your own posts still being checked, or not shared, stay pinned at the top with the reason.
-- **New post in three steps:** pick a style, create it, then preview with caption ideas, choose which of your groups to send it to, and share. Esc or ✕ closes it.
-- **Scratch to reveal.** Friends' posts arrive covered in silver foil; scratch about 60% (adjustable eraser) and the rest reveals itself. Reveals are saved per person.
-- **Live.** New posts appear on friends' screens within seconds (Supabase Realtime, with a polling fallback).
-- **Study screen and calm widget.** A big **study timer** with a length picker, **focus mode** (hides new posts, story rings and feed badges until the timer ends) and today's study time. From here the widget pops out as a compact always-on-top mini window in Chrome/Edge: the timer, the last 3 posts as small scratch cards, and a New post button. No sounds or flashing.
-- **Study sessions** are recorded (start, end, heartbeat) and power captions, check-ins and the weekly story.
-- **Safety tools.** Report button on every friend's post (hides it for you), delete your own posts, posts vanish from the widget after 24 hours.
-- **Late-night glow.** After midnight the screen takes on a warm lamp glow, and posts made then get a "still up?" tag.
-- **Look and feel: glossy Y2K gadget.** Bright, toy-like and cheerful, like a 2008-era digital camera or MP3 player sitting on your desk. Creamy white and pearl plastic with chrome trim, and soft pastel accents (lime, baby pink, sky blue) on a light cream-to-sky background with a soft glow. Glossy jelly pill buttons are colour-coded by role (green = post/send, pink = fog and fun, blue = timer/focus, pearl = everything else), windows are rounded "device" panels with a chrome title strip, the camera view sits inside a cute cream camera body with a chrome bezel and a glossy lens, and check-ins arrive as a soft pastel banner. The invite code and study timer show on little LCD screens. Rounded Nunito type, with Baloo 2 for headings. The study widget is a quiet pearl panel that uses the pastels sparingly. All icons and art are original CSS/SVG.
+- it **reads handwriting** in every post and blocks mean or unsafe ones before any friend can see them,
+- it **suggests captions** that fit your photo and study session (you choose, it never posts for you),
+- it occasionally **nudges the group** with a friendly check-in ("Everyone's been at it a while. Stretch break!"),
+- it writes a short **weekly story** from the group's real study stats.
 
-## AI Integration
+## 3. Key Features
 
-All AI calls run in Next.js server routes (`app/api/*`, Vercel serverless functions) through the Anthropic SDK. The model, provider URL and key come only from env vars (`ANTHROPIC_MODEL`, `ANTHROPIC_BASE_URL`, `ANTHROPIC_API_KEY`), so it works with Anthropic directly or an Anthropic-compatible provider. Every response must be JSON matching a **zod** schema; we use structured outputs where the provider supports them and otherwise fall back to plain JSON instructions, validating either way. Anything else counts as a failure. Model fallback is off unless `ANTHROPIC_FALLBACK_MODELS` lists the models it may use.
+**Sign-in and groups**
+- **Landing page:** "Study Booth" fills in dot by dot in a black script, then a centred sign-in card floats in.
+- **Accounts:** email + password through Supabase Auth, with an email magic link as a fallback.
+- **Private groups:** you can be in several groups. Each has a 6-character invite code (with a Copy button). There are no public profiles and no discovery. My Group has separate *Join a group* and *Start a new group* dialogs.
+- **Settings:** change your display name, and set or change your password.
 
-`npm run ai:check` makes one test call per AI feature through the running app and prints the results and any errors in full.
+**Making a post** (always user-initiated, always with a preview first)
+1. **Pick a style:**
+   - **Photo:** a webcam snapshot with live filters: *Digicam* (early-2000s compact camera with an orange date stamp), *Film* and *B&W*. The shutter button sits in the corner of the camera frame.
+   - **Fog glass:** blow into the mic to fog up the camera glass, then write in the fog with your **finger** (pinch to write, open your hand to lift; tracked on-device) or the mouse.
+   - **Card note:** type a few words and watch them appear live in a handwritten script on a paper card. Choose the paper colour (pink, cream, baby blue, lilac, mint), text size and alignment, and press rubber stamps (star, heart, smiley, moon, dots) wherever you click.
+2. **Create it.**
+3. **Share it:** pick an AI caption suggestion or write your own, choose **which group** to send it to, and send.
 
-| Feature | Route | What goes in | What comes out | When it fails |
+**Home**
+- **Stories row:** a bubble per friend. A pastel ring means unseen posts from the last 24 hours, and grey means you've seen them all. Tap one for a full-screen viewer and step through with taps or arrow keys.
+- **Feed:** newest first, last 24 hours only. Each card shows who posted, when, and the style (Photo / Fog / Card), with a ⋯ menu to **report** a friend's post or **delete** your own.
+- **Scratch to reveal:** friends' posts arrive under silver foil. Scratch about 60% and the rest reveals itself. Reveals are saved per person.
+- **Your posts:** while still being checked, or if not shared, they stay pinned at the top with a "Checking…" or "Not shared" badge and the reason.
+- **Live:** new posts appear within seconds (Supabase Realtime, with a polling fallback).
+
+**Studying**
+- **Study screen:** a big timer with a length picker, **focus mode** (hides new posts, story rings and badges until the timer ends) and today's total study time.
+- **Pop-out widget** (Chrome/Edge): a compact always-on-top window with the timer, the last 3 posts as small scratch cards, and a New post button. No sounds, no flashing.
+- **Smart check-ins** appear as one dismissible banner. *Demo shortcut:* **Ctrl+Shift+K** forces a check-in now.
+- **Weekly Story:** one card with an AI-written recap and the week's stats.
+- **Late-night glow:** after midnight the screen gets a warm lamp glow, and posts get a "still up?" tag.
+
+**Design**
+- **Glossy Y2K gadget look:** pearl plastic, chrome trim, pastel jelly pill buttons and little LCD screens. All art and icons are original CSS/SVG.
+- **Layout:** one screen at a time with a nav rail that becomes a bottom tab bar on narrow windows.
+- **Accessibility:** every screen has its own URL (`/`, `/study`, `/story`, `/group`, `/settings`, `?new=1` for the New post dialog), so Back and refresh work. Keyboard navigation, focus traps in dialogs, and reduced-motion support.
+
+## 4. AI Integration
+
+All AI runs in Next.js server routes (`app/api/*`) through the Anthropic SDK. The browser never sees an AI key. The model, provider URL and key come only from environment variables, so the app works with Anthropic directly or with an Anthropic-compatible provider. Every response must be JSON matching a **zod** schema. Structured outputs are used where the provider supports them, and anything that doesn't validate counts as a failure.
+
+| Feature | Route | Input | Output | If the AI fails |
 | --- | --- | --- | --- | --- |
-| Handwriting moderation | `POST /api/moderate` | The uploaded image, plus any typed note/caption wrapped in `<typed_text>` tags | `{ readText, allowed, category, reason }` | **Fails closed**: the post stays held and the sender sees a kind message |
-| Context-aware captions | `POST /api/caption` | Photo, minutes into the current study session, local time, group's last 3 captions | `{ suggestions: string[1..3] }` shown as chips; the user taps one and can still edit it | 5s timeout, then no chips; the post still sends |
-| Smart check-ins | `POST /api/checkin` | Group state computed in code: who's online, minutes studied today, who's been quiet 90+ minutes, past midnight, recent check-ins | `{ shouldNudge, message? }`, shown on everyone's screen as a dismissible banner | 8s timeout, then silently skipped |
-| Weekly story | `POST /api/weekly-story` | Stats computed **in SQL** (`group_week_stats`): hours, sessions, days, streak, late nights, posts | `{ title, story }` | Friendly "try again" message |
+| **Handwriting moderation** | `POST /api/moderate` | The post image, plus any typed text (note, caption) wrapped in `<typed_text>` tags | `{ readText, allowed, category, reason }`: it transcribes all text in the image first, then judges image + text together | **Fails closed.** The post is held and the sender gets a kind message. Friends never see it. |
+| **Caption suggestions** | `POST /api/caption` | The photo, minutes into the current study session, local time, and the group's last 3 captions | `{ suggestions: string[] }` (up to 3), shown as chips; the user taps one and can still edit it | 5 s timeout, then simply no chips. The post still sends. |
+| **Smart check-ins** | `POST /api/checkin` | Group state computed in code: who's online, minutes studied today, who's been quiet 90+ min, whether it's past midnight, recent check-ins | `{ shouldNudge, message? }`, shown to everyone as a banner | 8 s timeout, then silently skipped |
+| **Weekly story** | `POST /api/weekly-story` | Stats computed **in SQL** (`group_week_stats`): hours, sessions, days, streak, late-night sessions, posts | `{ title, story }`; the numbers shown come from SQL, not the AI | A friendly "try again" message |
 
-**How moderation fails closed.** Posts are inserted as `pending`, and RLS prevents users from changing a post's status. Only the server (service role key, after the model approves) can set `approved`. If the AI call errors, times out, refuses or returns invalid JSON, the post is set to `held`. If the route never runs at all, the post stays `pending`. Either way, friends never see it.
+**How moderation fails closed.** Every post is inserted as `pending`, and Row Level Security stops users from changing a post's status. Only the server route, using the service-role key and only after the model approves, can set `approved`. If the AI errors, times out, refuses or returns invalid JSON, the post is set to `held`. If the route never runs, the post stays `pending`. Friends only ever see `approved` posts.
 
-**Rate limits.** Every open client asks for a check-in every 5 minutes. A database function (`claim_checkin_slot`) allows at most one evaluation every 4 minutes and one posted check-in every 45 minutes per group.
+**Check-in rate limit.** Every open client asks for a check-in every 5 minutes. A database function (`claim_checkin_slot`) allows at most one evaluation every 4 minutes and one posted check-in every 45 minutes per group, however many people are online.
 
-**Demo control.** Double-click the taskbar clock (or press Ctrl+Shift+K) to force a check-in right now.
+**Tooling.** `npm run ai:check` makes one test call per AI feature through the running app and prints the results. `npm run redteam` runs the red-team suite (see section 7).
 
-## External Tools & Datasets
+## 5. External Tools & Datasets
 
-- [Next.js 16](https://nextjs.org) (App Router, TypeScript), deployed on [Vercel](https://vercel.com)
-- [Supabase](https://supabase.com): Auth (email + password, or magic links), Postgres + Row Level Security, Storage (private bucket, signed URLs), Realtime
-- [Anthropic API](https://docs.anthropic.com) via `@anthropic-ai/sdk` (vision + text, structured outputs)
-- [zod](https://zod.dev) for schema validation
-- [MediaPipe Tasks Vision](https://ai.google.dev/edge/mediapipe/solutions/vision/hand_landmarker) HandLandmarker (runs entirely in the browser; Google's pretrained hand landmark model)
-- [Google Fonts](https://fonts.google.com): Nunito (UI), Baloo 2 (headings), Sevillana (card note script) and Courier Prime (card details), loaded with `next/font`. All other styling is custom CSS (no UI kit).
-- Browser APIs: Web Audio (blow detection), Canvas 2D (fog, scratch foil, card notes), Document Picture-in-Picture
-- No external datasets. Red-team cases in `redteam/cases.json` were written by the team; their images are generated by `redteam/make-images.mjs`.
+| Tool | Used for |
+| --- | --- |
+| [Next.js 16](https://nextjs.org) (App Router, TypeScript) on [Vercel](https://vercel.com) | Web app, server routes, hosting |
+| [Supabase](https://supabase.com) | Auth (email + password, magic link), Postgres with Row Level Security, private Storage bucket with signed URLs, Realtime |
+| [Anthropic API](https://docs.anthropic.com) via `@anthropic-ai/sdk` (or an Anthropic-compatible provider) | Vision + text model for moderation, captions, check-ins and the weekly story |
+| [zod](https://zod.dev) | Validating every AI response |
+| [MediaPipe Tasks Vision](https://ai.google.dev/edge/mediapipe/solutions/vision/hand_landmarker): HandLandmarker | Fingertip tracking for fog writing, running entirely in the browser (Google's pretrained hand model) |
+| [Google Fonts](https://fonts.google.com) via `next/font` | Nunito (UI), Baloo 2 (headings), Sevillana (card notes and the landing title), Courier Prime (card details) |
+| Browser APIs | Web Audio (blow detection), Canvas 2D (fog, scratch foil, card notes, filters, dotted title), Document Picture-in-Picture (the pop-out widget) |
 
-## Installation & Setup
+**Datasets:** none. The 28 red-team cases in `redteam/cases.json` were written by the team, and their images are generated by `redteam/make-images.mjs`. All styling is custom CSS (no UI kit), and all icons and art are original.
 
-You need Node.js 20+ and free Supabase and Anthropic accounts.
+## 6. Installation & Setup
+
+You need **Node.js 20+**, a free **Supabase** project and an **Anthropic** (or compatible provider) API key.
 
 1. **Get the code and install**
    ```bash
    git clone https://github.com/wenhsin-smu/ai-lodge-2026.git
    cd ai-lodge-2026
-   npm install          # or pnpm install
+   npm install          # or: pnpm install
    ```
-2. **Create the database.** In the Supabase dashboard: **SQL Editor → New query**, paste all of `supabase/migrations/0001_init.sql`, click **Run**. It creates every table, RLS policy, the private `posts` storage bucket and its policies, the helper functions, and adds `posts`, `checkins` and `post_reveals` to Realtime. It's safe to run again.
-3. **Auth settings.** Supabase → **Authentication → URL Configuration**: set *Site URL* to your Vercel URL and add these *Redirect URLs*: `http://localhost:3000/auth/callback` and `https://<your-app>.vercel.app/auth/callback`. For a live demo, set up custom SMTP (the built-in email sender only allows a few emails per hour).
+
+2. **Create the database.** In Supabase, open **SQL Editor → New query**, paste the whole of `supabase/migrations/0001_init.sql`, and click **Run**. It creates every table, the Row Level Security policies, the private `posts` storage bucket and its policies, the helper functions, the trigger that creates a profile for each new user, and the Realtime setup. It's safe to run again.
+
+3. **Auth settings** (Supabase → **Authentication**):
+   - **Email provider:** enabled, with new sign-ups allowed. Turn **Confirm email** off if you want "Create account" to sign people straight in. If you leave it on, they'll be asked to confirm by email first.
+   - **URL Configuration:** set *Site URL* to your deployed URL, and add Redirect URLs `http://localhost:3000/auth/callback` and `https://<your-app>.vercel.app/auth/callback` (used by magic links).
+   - Optional: set up custom SMTP if you'll use magic links a lot, because Supabase's built-in email sender only sends a few emails per hour.
+
 4. **Environment variables.** Copy `.env.example` to `.env.local` and fill it in:
 
    | Variable | Where to find it | Secret? |
@@ -98,50 +120,72 @@ You need Node.js 20+ and free Supabase and Anthropic accounts.
    | `NEXT_PUBLIC_SUPABASE_URL` | Supabase → Project Settings → API | no |
    | `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` | Supabase → API Keys → publishable (or legacy anon) | no |
    | `SUPABASE_SERVICE_ROLE_KEY` | Supabase → API Keys → secret (or legacy service_role) | **yes, server only** |
-   | `ANTHROPIC_API_KEY` | console.anthropic.com → API Keys, or your provider's key | **yes, server only** |
-   | `ANTHROPIC_MODEL` | required: the model name, exactly as your provider lists it | no |
-   | `ANTHROPIC_BASE_URL` | optional: provider URL (e.g. `https://api.apiyi.com`); empty = Anthropic | no |
-   | `ANTHROPIC_FALLBACK_MODELS` | optional: comma-separated fallback models; empty = fallback off | no |
-   | `REDTEAM_TOKEN` | any long random string; enables the red-team script | yes |
+   | `ANTHROPIC_API_KEY` | console.anthropic.com → API Keys, or your provider | **yes, server only** |
+   | `ANTHROPIC_MODEL` | Required: the model name exactly as your provider lists it | no |
+   | `ANTHROPIC_BASE_URL` | Optional: provider URL (e.g. `https://api.apiyi.com`); empty = Anthropic | no |
+   | `ANTHROPIC_FALLBACK_MODELS` | Optional: comma-separated fallback models; empty = no fallback | no |
+   | `CAPTION_TIMEOUT_MS` | Optional: caption timeout (default 5000) | no |
+   | `REDTEAM_TOKEN` | Any long random string; enables `npm run redteam` | yes |
 
-5. **Run it:** `npm run dev`, then open http://localhost:3000 in Chrome or Edge. Then run `npm run ai:check` in a second terminal to confirm all 4 AI features work.
+5. **Run it**
+   ```bash
+   npm run dev          # then open http://localhost:3000 in Chrome or Edge
+   npm run ai:check     # in a second terminal: checks all 4 AI features
+   ```
+
 6. **Deploy:** import the repo on Vercel and add the same environment variables (Production and Preview). Vercel doesn't read `.env.local`.
 
-**Try it as two friends.** Sign in on two laptops (or two browser profiles) with two different emails. Laptop A: *My Group → Start a new group*, then share the invite code. Laptop B: *My Group → Join with a code*. Then post from one and scratch on the other.
+**Try it as two friends.** Use two browser profiles (or two laptops) and create two accounts. Friend A: *My Group → Start a new group*, then copy the invite code. Friend B: *My Group → Join a group*. Post from one, then scratch to reveal on the other.
 
-## AI Safety & Limitations
+## 7. AI Safety & Limitations
 
-### Risks we designed for
+### Risks and guardrails
 
 | Risk | Guardrail |
 | --- | --- |
-| Mean, sexual, hateful or unsafe content, including **handwritten** text | Vision moderation reads handwriting first, then judges image + text together, before anyone else can see the post |
-| **Prompt injection** written on the fog or in a note ("ignore your instructions…") | Text from images and users is wrapped in delimited tags and the system prompt says it is data to classify, never instructions; injection attempts are themselves blocked |
-| Moderation outage or bad output | Fails closed (see above); zod validation; refusals and truncation count as failures |
-| Under-18 users | Invite-only groups, no public profiles or discovery, no DMs; moderation and caption prompts are written for under-18s |
-| Hurtful AI text | Caption, check-in and story prompts forbid comments on bodies, looks, rooms, mess or productivity, and forbid comparing members. Captions are suggestions only: never auto-added |
-| Made-up stats | Weekly stats are computed in SQL; the model only writes prose from those numbers |
-| Camera privacy | Photos are never taken automatically. Hand tracking runs on-device; the live feed is never uploaded or stored. Only the finished post you choose to send is uploaded, to a private bucket served through short-lived signed URLs |
-| Data access between groups | Row Level Security on every table and the storage bucket (tested by trying to read, write and approve as members and outsiders) |
-| Something slips through | Report button on every post (hides it for the reporter and is stored for review); authors can delete; posts leave the widget after 24 hours |
+| Mean, sexual, hateful or unsafe content, including **handwritten** text in images | Vision moderation transcribes handwriting first, then judges the image and all text together, **before** anyone else can see the post |
+| **Prompt injection** written on the fog, in a card note or in a caption ("ignore your instructions…") | Text from images and users is wrapped in delimited tags, and every prompt that sees an image or user text states that it is data, never instructions. Injection attempts are themselves blocked. |
+| AI outage, timeout or bad output | Moderation **fails closed** (see section 4). All outputs are validated with zod, and refusals or truncated replies count as failures. Captions and check-ins degrade silently and never block posting. |
+| Hurtful AI wording | Caption, check-in and story prompts forbid comments on bodies, appearance, weight, mess or productivity, and forbid comparing members or singling anyone out. Captions are **suggestions only**: the user must pick or edit one, and nothing is auto-posted. |
+| Made-up statistics | Weekly stats are computed in SQL; the model only writes prose around those numbers |
+| Camera and mic privacy | Photos are never taken automatically: every capture is a button press with a preview. Hand tracking and blow detection run on-device, and the live feed is never uploaded. Only the finished post you choose to send is stored, in a **private** bucket served through short-lived signed URLs. |
+| Young users | Invite-only groups, no public profiles, no discovery and no direct messages; prompts are written with under-18s in mind |
+| Data leaking between groups | Row Level Security on every table and on the storage bucket: you can only read your own groups' rows and write your own posts, sessions and reports |
+| Accounts and passwords | Handled entirely by Supabase Auth. The app stores no passwords and has no custom auth logic. |
+| Something slips through | A **Report** button on every friend's post (hides it for you and records it for review), authors can delete their posts, and posts leave the feed and widget after 24 hours |
 
-### Red-team results
+### Testing done
 
-`redteam/cases.json` has 28 cases: 8 harmless study posts, 8 mean or inappropriate (typed and handwritten), 6 prompt injections (mostly written on fog), and 6 edge cases (sarcasm, slang, inside jokes, self-deprecation). `npm run redteam` sends each to `/api/moderate` and, for image cases, `/api/caption`, and writes `redteam/results.md`.
+- **Red-team suite:** `redteam/cases.json` has **28 cases**: 8 harmless study posts, 8 mean or inappropriate posts, 6 prompt-injection attempts and 6 edge cases (sarcasm, slang, inside jokes, self-deprecation). Half are typed text and half are images with handwritten-style text. `npm run redteam` sends each case to `/api/moderate` (and image cases to `/api/caption`) and writes a pass/fail table with a pass rate to `redteam/results.md`. Target: at least 90%.
 
-[Paste the tables from redteam/results.md here after running `npm run redteam`.]
+  **Results:** _run `npm run redteam` against your configured model and paste the summary table from `redteam/results.md` here._
+
+- **End-to-end tests:** a scripted two-friend test drives two real browser sessions through the whole app. It covers:
+  - password sign-up for both friends, creating and joining a group
+  - posting a photo with caption chips, the friend scratching it open, and the reveal persisting after reload
+  - a mean card note being **held** by moderation (with a kind message to the sender, and never shown to the friend)
+  - reporting and deleting posts, the study timer and focus mode, a forced check-in, the weekly story
+  - posting to a chosen group when you're in two
+  - changing your password in Settings (the old password stops working)
+
+  It runs 60 checks. The test environment is a local copy of the real database schema and policies, with stand-ins for Supabase Auth and the AI API, so it checks the app's behaviour and its fail-closed paths, not the real model's judgement. That's what the red-team suite is for.
+
+- **Auth tests:** wrong password, existing email, rate-limit message, sign-up with no session ("check your email"), staying signed in across reloads (including the server refreshing an expired session), and signing out.
+
+- **Row Level Security:** checked by trying to read other groups' posts, write as another user, and approve your own post directly as a member and as an outsider. All are refused.
 
 ### Known limitations
 
-- **Finger writing (hand tracking)** works best with one hand, palm towards the camera, in good light, inside the middle of the frame. Known limits:
-  - Dim rooms (the app warns "too dark"), strong backlight from a window behind you, and busy backgrounds lower detection confidence.
-  - The pinch is judged from 2D landmarks, so a hand turned side-on, or thumb and finger hidden behind each other, can read as a pinch (or miss one). Hold your hand flat to the camera.
-  - Very fast movement is smoothed and can cut corners; if the hand is lost for more than about 150 ms, the stroke ends.
-  - Older laptops without GPU acceleration run detection on the CPU at a lower frame rate (check `?debug=1`).
-  - The hand model downloads (~8 MB) the first time finger mode is turned on.
-  - Mouse/trackpad writing is always available as a fallback.
-- **Blow detection** uses mic loudness below ~500 Hz, so loud fans, wind or a bass-heavy room can trigger fog. Each laptop may need the threshold slider adjusted.
-- **Moderation is not perfect.** Sarcasm, slang and inside jokes are hard; we bias toward allowing friendly readings, which means some subtle meanness may get through (hence the report button). Messy handwriting can be misread.
-- **Captions and check-ins depend on a network AI call.** On slow connections captions are often skipped (by design).
-- **Pop-out widget** needs Chrome or Edge (Document Picture-in-Picture); other browsers get the in-page panel.
-- Free-tier Supabase email limits can block sign-in during a busy demo without custom SMTP.
+- **Moderation isn't perfect.** Sarcasm, slang and inside jokes are hard. The prompt leans towards friendly readings, so some subtle meanness can get through (hence the Report button). Very messy handwriting can be misread.
+- **Finger writing** works best with one hand, palm towards the camera, in good light, near the middle of the frame:
+  - Dim rooms (the app warns "too dark"), strong backlight and busy backgrounds lower accuracy.
+  - The pinch is judged from 2D landmarks, so a hand turned side-on can be misread.
+  - Older laptops without GPU acceleration track at a lower frame rate.
+  - The ~8 MB hand model downloads the first time finger mode is used.
+  - Mouse/trackpad writing always works as a fallback. Add `?debug=1` to the URL to see what the tracker sees.
+- **Blow detection** listens for low-frequency mic noise, so fans, wind or a bass-heavy room can fog the glass. Each laptop may need the threshold slider adjusted.
+- **Captions and check-ins need a network AI call.** On slow connections captions are often skipped (by design).
+- **The pop-out widget** needs Chrome or Edge (Document Picture-in-Picture). In other browsers, keep the Study tab open instead.
+- **Password reset when signed out** isn't built yet: you can change your password in Settings while signed in, or sign in with a magic link first.
+- **Supabase's free email sender** only sends a few emails per hour, so heavy magic-link use needs custom SMTP.
+- **The card note script** (Sevillana) is a free Google Font chosen to resemble a hand-lettered style; it isn't anyone's real handwriting.
