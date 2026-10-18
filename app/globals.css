@@ -1025,122 +1025,28 @@ body.pip .widget-window .window-body {
   margin: 0;
 }
 
-.landing-title svg {
+/* A dark plum marquee board with the title in warm light bulbs. */
+.marquee-board {
+  position: relative;
+  padding: 10px 18px;
+  border-radius: 30px;
+  background:
+    radial-gradient(ellipse at 50% 0%, rgba(255, 255, 255, 0.12), transparent 55%),
+    radial-gradient(ellipse at 50% 60%, #3a1a33 0%, #241020 70%);
+  border: 1px solid #120610;
+  box-shadow:
+    0 14px 30px rgba(60, 20, 50, 0.35),
+    0 0 0 4px rgba(255, 255, 255, 0.75),
+    0 0 0 5px var(--chrome-lo),
+    inset 0 2px 0 rgba(255, 255, 255, 0.12),
+    inset 0 -6px 14px rgba(0, 0, 0, 0.4);
+}
+
+.marquee-board canvas {
   display: block;
   width: 100%;
   height: auto;
-  overflow: visible;
-  filter: drop-shadow(0 6px 10px rgba(120, 90, 160, 0.18));
-}
-
-.landing-title text {
-  font-family: var(--font-card), cursive;
-  font-size: 170px;
-}
-
-.title-ink {
-  fill: url(#title-ink);
-  stroke: #7b5fb0;
-  stroke-width: 1.4;
-  stroke-opacity: 0.35;
-  stroke-dasharray: 1600;
-  stroke-dashoffset: 0;
-  animation:
-    title-draw 2.5s cubic-bezier(0.45, 0.05, 0.35, 1) 0.2s both,
-    title-fill 0.9s ease-out 2s both,
-    title-settle 0.9s ease-out 2s both;
-}
-
-/* The pen line softens once the colour has flowed in. */
-@keyframes title-settle {
-  from {
-    stroke-opacity: 1;
-  }
-  to {
-    stroke-opacity: 0.35;
-  }
-}
-
-.title-shadow {
-  fill: rgba(255, 255, 255, 0.9);
-  animation: title-fill 0.9s ease-out 2.2s both;
-}
-
-/* Reveal from left to right, like a pen moving across the page. */
-.title-write {
-  clip-path: inset(-20% -5% -20% -5%);
-  animation: title-reveal 2.5s cubic-bezier(0.45, 0.05, 0.35, 1) 0.2s both;
-}
-
-@keyframes title-reveal {
-  from {
-    clip-path: inset(-20% 100% -20% -5%);
-  }
-  to {
-    clip-path: inset(-20% -5% -20% -5%);
-  }
-}
-
-@keyframes title-draw {
-  from {
-    stroke-dashoffset: 1600;
-  }
-  to {
-    stroke-dashoffset: 0;
-  }
-}
-
-@keyframes title-fill {
-  from {
-    fill-opacity: 0;
-  }
-  to {
-    fill-opacity: 1;
-  }
-}
-
-/* A glossy sparkle that rides along the writing. */
-.title-pen {
-  position: absolute;
-  top: 46%;
-  left: 88%;
-  width: 18px;
-  height: 18px;
-  margin: -9px 0 0 -9px;
-  border-radius: 50%;
-  background: radial-gradient(circle at 35% 30%, #fff 0 30%, var(--pink-hi) 55%, rgba(239, 163, 191, 0) 72%);
-  box-shadow: 0 0 14px 4px rgba(255, 255, 255, 0.8);
-  opacity: 0;
-  animation: title-pen 2.6s cubic-bezier(0.45, 0.05, 0.35, 1) 0.2s both;
-  pointer-events: none;
-}
-
-@keyframes title-pen {
-  0% {
-    left: 9%;
-    top: 40%;
-    opacity: 0;
-  }
-  8% {
-    opacity: 1;
-  }
-  30% {
-    top: 58%;
-  }
-  55% {
-    top: 38%;
-  }
-  80% {
-    top: 56%;
-  }
-  92% {
-    opacity: 1;
-  }
-  100% {
-    left: 90%;
-    top: 46%;
-    opacity: 0;
-  }
+  aspect-ratio: 1000 / 300;
 }
 
 .landing-tagline {

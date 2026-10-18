@@ -1,9 +1,10 @@
-// The signed-out landing page: "Study Booth" writes itself out in script,
-// then the tagline, a few feature chips and the sign-in card float in.
-// All animation is CSS (see "landing" in globals.css) and switches off with
-// prefers-reduced-motion.
+// The signed-out landing page: "Study Booth" lights up bulb by bulb on a
+// marquee board, then the tagline, a few feature chips and the sign-in card float in.
+// The title is a canvas (MarqueeTitle); the rest is CSS (see "landing" in
+// globals.css). Both switch off with prefers-reduced-motion.
 
 import AuthCard from "@/components/AuthCard";
+import MarqueeTitle from "@/components/MarqueeTitle";
 
 const FEATURES = ["Fog-glass doodles", "Handwritten card notes", "Scratch to reveal", "Floating study widget"];
 
@@ -18,24 +19,7 @@ export default function Landing({ notice }: { notice?: React.ReactNode }) {
 
       <h1 className="landing-title">
         <span className="sr-only">Study Booth</span>
-        <svg viewBox="0 0 1000 230" role="presentation" aria-hidden="true">
-          <defs>
-            <linearGradient id="title-ink" x1="0" y1="0" x2="1" y2="1">
-              <stop offset="0" stopColor="#e2709f" />
-              <stop offset="0.5" stopColor="#a77fd6" />
-              <stop offset="1" stopColor="#4f97d6" />
-            </linearGradient>
-          </defs>
-          <g className="title-write">
-            <text x="500" y="170" textAnchor="middle" className="title-shadow">
-              Study Booth
-            </text>
-            <text x="500" y="165" textAnchor="middle" className="title-ink">
-              Study Booth
-            </text>
-          </g>
-        </svg>
-        <span className="title-pen" aria-hidden="true" />
+        <MarqueeTitle />
       </h1>
 
       <p className="landing-tagline">Study apart, together.</p>
