@@ -22,7 +22,6 @@ function friendly(error: AuthError, action: "signin" | "signup" | "magic") {
   if (code === "email_not_confirmed") return "Please confirm your email first, or use a magic link instead.";
   if (code === "validation_failed" || msg.includes("invalid format") || msg.includes("is invalid"))
     return "That doesn't look like an email address.";
-  if (code.includes("rate_limit") || error.status === 429) return "Too many tries. Wait a minute and try again.";
   if (action === "magic") return `Couldn't send the link: ${error.message}`;
   return `Something went wrong: ${error.message}`;
 }
