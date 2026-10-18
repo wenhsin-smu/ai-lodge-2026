@@ -970,87 +970,19 @@ body.pip .widget-window .window-body {
 }
 
 /* Stitched notes: the fabric sits in a wooden embroidery frame (DOM only, not part of the image). */
-.hoop-frame {
-  position: relative;
-  aspect-ratio: 4 / 3;
+/* Card notes: the card sits slightly tilted on the desk with a soft shadow. */
+.card-frame {
   padding: 10px;
-  border-radius: 26px;
-  background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.35), transparent 40%),
-    linear-gradient(135deg, #e2b98a 0%, #c9925e 45%, #b47a48 100%);
-  box-shadow:
-    var(--shadow-soft),
-    inset 0 2px 0 rgba(255, 255, 255, 0.5),
-    inset 0 -3px 6px rgba(90, 50, 20, 0.3);
 }
 
-.hoop-frame::before {
-  /* Brass tension screw. */
-  content: "";
-  position: absolute;
-  top: -7px;
-  left: 50%;
-  width: 26px;
-  height: 12px;
-  margin-left: -13px;
+.card-frame canvas {
+  display: block;
+  width: 100%;
+  height: auto;
   border-radius: 4px;
-  background: linear-gradient(180deg, #fff3c4, #d8b45a 55%, #a8842e);
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+  transform: rotate(-0.6deg);
+  box-shadow: 0 10px 22px rgba(80, 60, 80, 0.22), 0 2px 4px rgba(80, 60, 80, 0.15);
 }
-
-.hoop-frame canvas {
-  display: block;
-  width: 100%;
-  height: 100%;
-  border-radius: 18px;
-  box-shadow: inset 0 0 0 1px rgba(90, 50, 20, 0.35), 0 0 0 2px rgba(255, 255, 255, 0.4);
-}
-
-/* Bedazzled notes: the card sits in a glossy pearl frame (DOM only, not part of the image). */
-.gem-frame {
-  aspect-ratio: 4 / 3;
-  padding: 8px;
-  border-radius: 24px;
-  background: linear-gradient(180deg, #ffffff, var(--pearl) 60%, var(--pearl-lo));
-  border: 1px solid var(--pearl-lo);
-  box-shadow: var(--shadow-soft), inset 0 2px 0 #fff;
-}
-
-.gem-frame canvas {
-  display: block;
-  width: 100%;
-  height: 100%;
-  border-radius: 18px;
-}
-
-.gem-twinkle {
-  position: absolute;
-  z-index: 1;
-  width: 18px;
-  height: 18px;
-  margin: -9px 0 0 -9px;
-  pointer-events: none;
-  background: radial-gradient(circle, #fff 0 12%, transparent 13%),
-    linear-gradient(0deg, transparent 46%, #fff 46% 54%, transparent 54%),
-    linear-gradient(90deg, transparent 46%, #fff 46% 54%, transparent 54%);
-  filter: drop-shadow(0 0 3px rgba(255, 255, 255, 0.9));
-  opacity: 0;
-  animation: gem-twinkle 0.7s ease-in-out;
-}
-
-@keyframes gem-twinkle {
-  0%,
-  100% {
-    opacity: 0;
-    transform: scale(0.3) rotate(0deg);
-  }
-  50% {
-    opacity: 0.9;
-    transform: scale(1) rotate(20deg);
-  }
-}
-
-/* ---------------------------------------------------------------- photo filters */
 
 .filter-chips {
   display: inline-flex;
@@ -1587,7 +1519,7 @@ button.viewer-nav {
 
 .style-picker {
   display: grid;
-  grid-template-columns: repeat(2, 1fr);
+  grid-template-columns: repeat(3, 1fr);
   gap: 12px;
 }
 

@@ -19,7 +19,7 @@ Students want the feeling of studying side by side, without an infinite feed or 
 
 ## Solution Overview
 
-Study Booth is a bright, glossy "gadget desk" in the browser with a calm little widget that floats over your notes (Document Picture-in-Picture). You and your friends form a private, invite-only group. Every so often someone sends something small and handmade: a photo, a message finger-written on fogged glass, or a note that gets embroidered stitch by stitch. It arrives on everyone's widget under silver scratch-card foil, and friends scratch it off to reveal it.
+Study Booth is a bright, glossy "gadget desk" in the browser with a calm little widget that floats over your notes (Document Picture-in-Picture). You and your friends form a private, invite-only group. Every so often someone sends something small and handmade: a photo, a message finger-written on fogged glass, or a note written in curly script on a pretty paper card. It arrives on everyone's widget under silver scratch-card foil, and friends scratch it off to reveal it.
 
 AI works quietly in the background, always server-side:
 
@@ -34,11 +34,10 @@ AI works quietly in the background, always server-side:
 - **Three ways to post** (always user-initiated, always with a preview and a retake button):
   - **Photo:** a normal webcam snapshot.
   - **Fog glass:** blow into the mic to fog the lens glass of the little booth camera, then write in it with your **finger** or the mouse/trackpad. Finger writing runs entirely on-device: **pinch** thumb and index finger to write, open your hand to lift the pen. The fingertip is smoothed with a One Euro filter, strokes are drawn as smooth curves, and only the middle 70% of the camera view is needed. Add `?debug=1` to the URL to see the hand landmarks, pen state, FPS and confidence.
-  - **Stitched note:** type a note and watch a needle backstitch it onto linen in about two seconds, thread by thread, inside a wooden embroidery frame.
-  - **Bedazzled note:** type a short note and it's spelled out in cursive rhinestones on a pastel card, popping on gem by gem with a little bounce. Pick crystal, pink, AB iridescent, pearl or mixed gems and a pink, baby blue, lilac or white card. Finished notes twinkle now and then (switched off with reduced motion).
+  - **Card note:** type a few words and watch them appear, as you type, in a curly handwritten script on a paper card: pink paper with scattered stars, or a cream folded postcard with hollow blue lettering and the date typed in the corner.
   - **Photo filters**, previewed live before you shoot: None, **Digicam** (soft compact-camera look, hot highlights, colour fringing, grain and an orange seven-segment date stamp), **Film** (warm, faded) and **B&W**. A quick white flash plays when you take the photo, and your last filter is remembered.
 - **One screen at a time.** A slim nav rail (Home, New post, Study, Weekly Story, My Group) that becomes a bottom tab bar in a narrow window, and a top bar with a study timer chip and your avatar menu. Every screen has its own URL (`/`, `/study`, `/story`, `/group`, and `?new=1` for the New post modal), so refresh and Back work.
-- **Home: stories and feed.** A row of friend bubbles (a pastel ring means unseen posts from the last 24 hours, grey means you've seen them all) opens a full-screen viewer you step through with taps or arrow keys. Below it, a centred feed of cards, newest first, each tagged Photo / Fog / Stitched / Bedazzled with a ⋯ menu to report or delete. Your own posts still being checked, or not shared, stay pinned at the top with the reason.
+- **Home: stories and feed.** A row of friend bubbles (a pastel ring means unseen posts from the last 24 hours, grey means you've seen them all) opens a full-screen viewer you step through with taps or arrow keys. Below it, a centred feed of cards, newest first, each tagged Photo / Fog / Card with a ⋯ menu to report or delete. Your own posts still being checked, or not shared, stay pinned at the top with the reason.
 - **New post in three steps:** pick a style, create it, then preview with caption ideas and share. Esc or ✕ closes it.
 - **Scratch to reveal.** Friends' posts arrive covered in silver foil; scratch about 60% (adjustable eraser) and the rest reveals itself. Reveals are saved per person.
 - **Live.** New posts appear on friends' screens within seconds (Supabase Realtime, with a polling fallback).
@@ -74,9 +73,8 @@ All AI calls run in Next.js server routes (`app/api/*`, Vercel serverless functi
 - [Anthropic API](https://docs.anthropic.com) via `@anthropic-ai/sdk` (vision + text, structured outputs)
 - [zod](https://zod.dev) for schema validation
 - [MediaPipe Tasks Vision](https://ai.google.dev/edge/mediapipe/solutions/vision/hand_landmarker) HandLandmarker (runs entirely in the browser; Google's pretrained hand landmark model)
-- [Google Fonts](https://fonts.google.com): Nunito (UI) and Baloo 2 (headings), loaded with `next/font`. All other styling is custom CSS (no UI kit).
-- [Hershey Script](https://en.wikipedia.org/wiki/Hershey_fonts) single-stroke font (public-domain Hershey data, via the MIT-licensed `hersheytext` package) for the cursive Bedazzled gem layout, embedded as `lib/scriptFont.ts`
-- Browser APIs: Web Audio (blow detection), Canvas 2D (fog, scratch foil, embroidery, rhinestones), Document Picture-in-Picture
+- [Google Fonts](https://fonts.google.com): Nunito (UI), Baloo 2 (headings), Sevillana (card note script) and Courier Prime (card details), loaded with `next/font`. All other styling is custom CSS (no UI kit).
+- Browser APIs: Web Audio (blow detection), Canvas 2D (fog, scratch foil, card notes), Document Picture-in-Picture
 - No external datasets. Red-team cases in `redteam/cases.json` were written by the team; their images are generated by `redteam/make-images.mjs`.
 
 ## Installation & Setup

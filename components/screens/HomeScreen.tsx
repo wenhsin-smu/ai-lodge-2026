@@ -198,7 +198,6 @@ function StoryViewer({ startWith, eraserSize, onClose }: { startWith: string; er
               covered={covered}
               eraserSize={eraserSize * 1.6}
               onRevealed={() => void reveal(post.id)}
-              twinkle={postStyle(post) === "Bedazzled"}
             />
           </div>
           <button className="viewer-nav next" aria-label="Next post" onClick={() => go(1)}>
@@ -337,7 +336,6 @@ function FeedCard({
           if (previewAsFriend) onPreviewRevealed();
           else void reveal(post.id);
         }}
-        twinkle={style === "Bedazzled"}
       />
       {!covered && post.caption && <p className="post-caption">{post.caption}</p>}
       {mine && post.status === "held" && post.moderation_reason && (

@@ -2,18 +2,16 @@
 
 import { useEffect, useState } from "react";
 import FogBooth from "@/components/FogBooth";
-import BedazzleComposer from "@/components/BedazzleComposer";
-import NoteComposer from "@/components/NoteComposer";
-import { useBooth, type NoteStyle, type PostKind } from "@/components/BoothProvider";
+import CardComposer from "@/components/CardComposer";
+import { useBooth, type PostKind } from "@/components/BoothProvider";
 
-type Style = "photo" | "fog" | "note" | "gems";
-type Draft = { image: string; kind: PostKind; noteText?: string; style?: NoteStyle };
+type Style = "photo" | "fog" | "card";
+type Draft = { image: string; kind: PostKind; noteText?: string };
 
 const STYLES: { id: Style; label: string; blurb: string; tone: "green" | "pink" | "blue" }[] = [
   { id: "photo", label: "Photo", blurb: "A quick snap, with a filter", tone: "green" },
   { id: "fog", label: "Fog glass", blurb: "Blow to fog, then write on it", tone: "pink" },
-  { id: "note", label: "Stitched", blurb: "A note embroidered on linen", tone: "blue" },
-  { id: "gems", label: "Bedazzled", blurb: "A note spelled in rhinestones", tone: "pink" },
+  { id: "card", label: "Card note", blurb: "Your words, handwritten on a pretty card", tone: "blue" },
 ];
 
 /** Style → create → preview & share. */
@@ -53,16 +51,16 @@ export default function NewPost({ onShared }: { onShared: (ok: boolean, message:
             </div>
           )}
           {/* Keyed by style so switching restarts the camera with or without the mic. */}
-          {style === "gems" ? (
+          {style === "card" ? (
             !draft && (
-              <BedazzleComposer
+              <CardComposer
                 onCreated={(image, noteText) => {
                   setLastResult(null);
-                  setDraft({ image, kind: "note", noteText, style: "bedazzled" });
+                  setDraft({ image, kind: "note", noteText });
                 }}
               />
             )
-          ) : style !== "note" ? (
+          ) : (
             <FogBooth
               key={style}
               fog={style === "fog"}
@@ -72,15 +70,6 @@ export default function NewPost({ onShared }: { onShared: (ok: boolean, message:
                 setDraft({ image, kind });
               }}
             />
-          ) : (
-            !draft && (
-              <NoteComposer
-                onStitched={(image, noteText) => {
-                  setLastResult(null);
-                  setDraft({ image, kind: "note", noteText, style: "stitched" });
-                }}
-              />
-            )
           )}
           {draft && (
             <SendPreview
@@ -152,7 +141,6 @@ function SendPreview({
         kind: draft.kind,
         caption,
         noteText: draft.noteText,
-        style: draft.style,
       });
       onDone(result.status === "approved", result.status === "approved" ? "Sent! Your friends can scratch to reveal it." : result.message);
     } catch (e) {

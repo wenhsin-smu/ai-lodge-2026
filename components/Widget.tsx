@@ -4,7 +4,7 @@ import { createContext, useContext, useEffect, useState, useSyncExternalStore } 
 import { createPortal } from "react-dom";
 import { useRouter } from "next/navigation";
 import ScratchCard from "@/components/ScratchCard";
-import { postStyle, useBooth } from "@/components/BoothProvider";
+import { useBooth } from "@/components/BoothProvider";
 import { useFeed } from "@/components/useFeed";
 
 const LATEST = 3;
@@ -135,7 +135,6 @@ function WidgetThumbs() {
           covered={isCovered(p)}
           eraserSize={90}
           onRevealed={() => void reveal(p.id)}
-          twinkle={postStyle(p) === "Bedazzled"}
         />
       ))}
     </div>

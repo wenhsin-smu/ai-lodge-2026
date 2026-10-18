@@ -1,10 +1,13 @@
 import type { Metadata } from "next";
-import { Baloo_2, Nunito } from "next/font/google";
+import { Baloo_2, Courier_Prime, Nunito, Sevillana } from "next/font/google";
 import "./globals.css";
 
 // Rounded, friendly UI font, plus a bubbly display font for headings only.
 const ui = Nunito({ subsets: ["latin"], variable: "--font-ui", weight: ["400", "600", "700", "800"] });
 const display = Baloo_2({ subsets: ["latin"], variable: "--font-display", weight: ["600", "700", "800"] });
+// Card notes: a curly handwritten script, with typewriter details.
+const card = Sevillana({ subsets: ["latin"], variable: "--font-card", weight: "400" });
+const mono = Courier_Prime({ subsets: ["latin"], variable: "--font-mono", weight: "400" });
 
 export const metadata: Metadata = {
   title: "Study Booth",
@@ -13,7 +16,7 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
-    <html lang="en" className={`${ui.variable} ${display.variable}`}>
+    <html lang="en" className={`${ui.variable} ${display.variable} ${card.variable} ${mono.variable}`}>
       <body>{children}</body>
     </html>
   );
