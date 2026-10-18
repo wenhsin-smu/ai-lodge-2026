@@ -814,6 +814,46 @@ body.pip .widget-window .window-body {
 .viewfinder-corner.bl { bottom: 12px; left: 12px; border-right: none; border-top: none; border-bottom-left-radius: 8px; }
 .viewfinder-corner.br { bottom: 12px; right: 12px; border-left: none; border-top: none; border-bottom-right-radius: 8px; }
 
+/* Shutter (and clear-fog) buttons sit inside the viewfinder, bottom right. */
+.shutter-controls {
+  position: absolute;
+  right: 18px;
+  bottom: 18px;
+  z-index: 4;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+button.shutter-button {
+  --hi: #ffffff;
+  --lo: var(--lime-lo);
+  --edge: var(--lime-edge);
+  width: 60px;
+  height: 60px;
+  min-height: 0;
+  padding: 0;
+  border-radius: 50%;
+  border-width: 2px;
+  color: #3a3a40;
+  box-shadow:
+    0 0 0 4px rgba(255, 255, 255, 0.85),
+    0 6px 14px rgba(30, 40, 60, 0.35),
+    inset 0 -4px 6px rgba(0, 0, 0, 0.1);
+}
+
+button.clear-fog-button {
+  width: 42px;
+  height: 42px;
+  min-height: 0;
+  padding: 0;
+  border-radius: 50%;
+  color: #3a3a40;
+  box-shadow:
+    0 0 0 3px rgba(255, 255, 255, 0.8),
+    0 4px 10px rgba(30, 40, 60, 0.3);
+}
+
 .preview-photo {
   width: 100%;
   display: block;

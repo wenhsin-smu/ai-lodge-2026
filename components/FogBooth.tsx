@@ -419,8 +419,8 @@ export default function FogBooth({ fog, hidden = false, onCapture }: Props) {
             </button>
             <p className="viewfinder-hint">
               {fog
-                ? "The browser will ask for your camera and microphone (blow into the mic to fog the glass). Nothing is saved until you press Take photo."
-                : "The browser will ask for your camera. Nothing is saved until you press Take photo."}
+                ? "The browser will ask for your camera and microphone (blow into the mic to fog the glass). Nothing is saved until you press the shutter button."
+                : "The browser will ask for your camera. Nothing is saved until you press the shutter button."}
             </p>
             {error && (
               <p role="alert" className="viewfinder-error">
@@ -447,6 +447,24 @@ export default function FogBooth({ fog, hidden = false, onCapture }: Props) {
           </button>
         )}
         {fingerActive && tooDark && <div className="dark-warning">It&apos;s a bit dark: turn on a light so finger tracking can see your hand.</div>}
+        {running && (
+          <div className="shutter-controls">
+            {fog && (
+              <button type="button" className="clear-fog-button pill-pink" aria-label="Clear fog" title="Clear fog" onClick={clearFog}>
+                <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true">
+                  <path d="M4 15c3-1 5-4 8-4s4 3 8 2M4 10c3-1 5-4 8-4s4 3 8 2M6 19c2-1 4-2 6-2s3 1 6 1" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+                </svg>
+              </button>
+            )}
+            <button type="button" className="shutter-button" aria-label="Take photo" title="Take photo" onClick={takePhoto}>
+              <svg viewBox="0 0 24 24" width="26" height="26" aria-hidden="true">
+                <path d="M4 8.5A2.5 2.5 0 0 1 6.5 6h1.8l1.2-1.8h5l1.2 1.8h1.8A2.5 2.5 0 0 1 20 8.5v8A2.5 2.5 0 0 1 17.5 19h-11A2.5 2.5 0 0 1 4 16.5z" fill="currentColor" />
+                <circle cx="12" cy="12.5" r="3.6" fill="#fff" />
+                <circle cx="12" cy="12.5" r="2.2" fill="currentColor" />
+              </svg>
+            </button>
+          </div>
+        )}
       </div>
       </div>
 
@@ -466,9 +484,6 @@ export default function FogBooth({ fog, hidden = false, onCapture }: Props) {
               </button>
             ))}
           </div>
-          <button className="pill-green" onClick={takePhoto}>
-            Take photo
-          </button>
         </div>
       )}
 
@@ -520,14 +535,6 @@ export default function FogBooth({ fog, hidden = false, onCapture }: Props) {
           {mode === "finger" && handStatus === "ready" && (
             <p className="hint">Pinch your thumb and index finger together to write; open your hand to lift the pen. Keep your hand in the middle of the camera view.</p>
           )}
-          <div className="field-row">
-            <button className="pill-pink" onClick={clearFog}>
-              Clear fog
-            </button>
-            <button className="pill-green" onClick={takePhoto}>
-              Take photo
-            </button>
-          </div>
         </div>
       )}
 
