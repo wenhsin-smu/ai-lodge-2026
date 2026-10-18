@@ -60,7 +60,8 @@ type BoothState = {
   joinGroup: (code: string) => Promise<void>;
   leaveGroup: () => Promise<void>;
   renameMe: (name: string) => Promise<void>;
-  sendPost: (p: { image: string; kind: PostKind; caption?: string; noteText?: string }) => Promise<SendResult>;
+  /** Sends to `groupId`, or to the group you are looking at. */
+  sendPost: (p: { image: string; kind: PostKind; caption?: string; noteText?: string; groupId?: string }) => Promise<SendResult>;
   deletePost: (post: Post) => Promise<void>;
   reveal: (postId: string) => Promise<void>;
   report: (postId: string, reason: string) => Promise<void>;
@@ -306,16 +307,17 @@ export function BoothProvider({ userId, children }: { userId: string; children: 
       setMe((m) => (m ? { ...m, display_name: clean } : m));
       setMembers((list) => list.map((m) => (m.id === userId ? { ...m, display_name: clean } : m)));
     },
-    sendPost: async ({ image, kind, caption, noteText }) => {
-      if (!groupId) throw new Error("Join or create a group first.");
+    sendPost: async ({ image, kind, caption, noteText, groupId: to }) => {
+      const target = to ?? groupId;
+      if (!target || !groups.some((g) => g.id === target)) throw new Error("Join or create a group first.");
       const id = crypto.randomUUID();
-      const path = `${groupId}/${userId}/${id}.jpg`;
+      const path = `${target}/${userId}/${id}.jpg`;
       const blob = await (await fetch(image)).blob();
       const up = await supabase.storage.from("posts").upload(path, blob, { contentType: "image/jpeg" });
       if (up.error) throw new Error(`Upload failed: ${up.error.message}`);
       const ins = await supabase.from("posts").insert({
         id,
-        group_id: groupId,
+        group_id: target,
         user_id: userId,
         kind,
         image_path: path,

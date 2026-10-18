@@ -15,7 +15,7 @@ const STYLES: { id: Style; label: string; blurb: string; tone: "green" | "pink" 
 ];
 
 /** Style → create → preview & share. */
-export default function NewPost({ onShared }: { onShared: (ok: boolean, message: string) => void }) {
+export default function NewPost({ onShared }: { onShared: (ok: boolean, message: string, groupId: string) => void }) {
   const [style, setStyle] = useState<Style | null>(null);
   const [draft, setDraft] = useState<Draft | null>(null);
   const [lastResult, setLastResult] = useState<{ ok: boolean; message: string } | null>(null);
@@ -98,12 +98,14 @@ function SendPreview({
 }: {
   draft: Draft;
   onCancel: () => void;
-  /** The post was saved (shared, or held by moderation). */
-  onDone: (ok: boolean, message: string) => void;
+  /** The post was saved (shared, or held by moderation) in `groupId`. */
+  onDone: (ok: boolean, message: string, groupId: string) => void;
   /** Nothing was saved; stay here so they can try again. */
   onError: (message: string) => void;
 }) {
-  const { group, sendPost } = useBooth();
+  const { group, groups, sendPost } = useBooth();
+  const [to, setTo] = useState(group?.id ?? "");
+  const target = groups.find((g) => g.id === to) ?? group;
   const [caption, setCaption] = useState("");
   const [suggestions, setSuggestions] = useState<string[] | null>(null);
   const [sending, setSending] = useState(false);
@@ -134,6 +136,7 @@ function SendPreview({
   }, [draft.image, group]);
 
   async function send() {
+    if (!target) return;
     setSending(true);
     try {
       const result = await sendPost({
@@ -141,8 +144,13 @@ function SendPreview({
         kind: draft.kind,
         caption,
         noteText: draft.noteText,
+        groupId: target.id,
       });
-      onDone(result.status === "approved", result.status === "approved" ? "Sent! Your friends can scratch to reveal it." : result.message);
+      onDone(
+        result.status === "approved",
+        result.status === "approved" ? `Sent to ${target.name}! Your friends can scratch to reveal it.` : result.message,
+        target.id,
+      );
     } catch (e) {
       onError(e instanceof Error ? e.message : "Couldn't send.");
     } finally {
@@ -166,12 +174,31 @@ function SendPreview({
           </button>
         ))}
       </div>
+      {groups.length > 0 && (
+        <div className="field-row">
+          <span className="control-label">Send to</span>
+          <div className="filter-chips" role="radiogroup" aria-label="Send to group">
+            {groups.map((g) => (
+              <button
+                key={g.id}
+                role="radio"
+                aria-checked={target?.id === g.id}
+                className={target?.id === g.id ? "small pill-green" : "small"}
+                onClick={() => setTo(g.id)}
+                disabled={sending}
+              >
+                {g.name}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
       <div className="field-row">
         <button onClick={onCancel} disabled={sending}>
           {draft.kind === "note" ? "Back" : "Retake"}
         </button>
-        <button className="pill-green" onClick={send} disabled={sending || !group}>
-          {sending ? "Checking & sending..." : "Send to group"}
+        <button className="pill-green" onClick={send} disabled={sending || !target}>
+          {sending ? "Checking & sending..." : target ? `Send to ${target.name}` : "Send to group"}
         </button>
       </div>
       {!group && <p>Join or create a group first (My Group tab).</p>}

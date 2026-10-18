@@ -45,7 +45,7 @@ function Shell({ email, children }: { email: string; children: React.ReactNode }
   const pathname = usePathname();
   const params = useSearchParams();
   const newOpen = params.get("new") === "1";
-  const { group, loading, error, checkins, refresh } = useBooth();
+  const { group, loading, error, checkins, refresh, selectGroup } = useBooth();
   const openedInApp = useRef(false);
   const [notice, setNotice] = useState<{ message: string; ok: boolean } | null>(null);
   const [dismissed, setDismissed] = useState<Set<string>>(new Set());
@@ -196,8 +196,10 @@ function Shell({ email, children }: { email: string; children: React.ReactNode }
         {newOpen && !loading && (
           <Modal title="New post" onClose={closeNewPost} className="modal-wide">
             <NewPost
-              onShared={(ok, message) => {
+              onShared={(ok, message, groupId) => {
                 openedInApp.current = false;
+                // Show the group you just posted to, with the new post at the top.
+                if (groupId !== group?.id) selectGroup(groupId);
                 router.replace("/");
                 flash(message, ok);
               }}
@@ -264,8 +266,11 @@ function AvatarMenu({ email }: { email: string }) {
             <b>{name}</b>
             <span className="hint">{group ? group.name : email}</span>
           </div>
+          <Link href="/settings" role="menuitem" className="popover-link" onClick={() => setOpen(false)}>
+            Settings
+          </Link>
           <Link href="/group" role="menuitem" className="popover-link" onClick={() => setOpen(false)}>
-            Group &amp; name
+            My Group
           </Link>
           <form action="/auth/signout" method="post">
             <button type="submit" role="menuitem" className="small">

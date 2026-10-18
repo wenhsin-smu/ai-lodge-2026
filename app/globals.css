@@ -1837,6 +1837,38 @@ button.style-option {
   flex: 1;
 }
 
+/* My Group: Join and Create are two separate tiles, each opening its own dialog. */
+.group-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+button.group-tile {
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+  min-height: 76px;
+  padding: 12px 18px;
+  border-radius: 22px;
+  text-align: left;
+}
+
+.group-tile b {
+  font: 800 16px var(--font-display-stack);
+}
+
+.group-tile span {
+  font-size: 12px;
+  font-weight: 600;
+}
+
+input.code-input {
+  font-size: 24px;
+  letter-spacing: 6px;
+  text-align: center;
+}
+
 .member-list {
   display: flex;
   flex-direction: column;
@@ -1926,7 +1958,8 @@ button.style-option {
     width: 26px;
     height: 26px;
   }
-  .style-picker {
+  .style-picker,
+  .group-actions {
     grid-template-columns: 1fr;
   }
   .timer-readout.timer-big {
