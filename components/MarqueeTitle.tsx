@@ -1,9 +1,9 @@
 "use client";
 
-// "Study Booth" spelled in light bulbs on a dark marquee board. The script
-// lettering is sampled onto a dot grid; bulbs switch on left to right like the
-// words are being written, then a few twinkle now and then. With reduced
-// motion every bulb is simply on.
+// "Study Booth" spelled in glossy black dots, marquee style, straight on the
+// page. The script lettering is sampled onto a dot grid; dots fill in left to
+// right like the words are being written, then a few flicker now and then.
+// With reduced motion every dot is simply shown.
 
 import { useEffect, useRef } from "react";
 
@@ -11,7 +11,7 @@ const W = 1000;
 const H = 300;
 const TEXT = "Study Booth";
 const STEP = 9; // grid spacing between bulbs
-const BULB = 3.5; // bulb radius
+const BULB = 3; // bulb radius
 const WRITE_MS = 2400;
 const BULB_MS = 180; // each bulb's fade-in
 
@@ -39,7 +39,7 @@ function layoutBulbs(font: string): Bulb[] {
   ctx.fillText(TEXT, W / 2, H / 2 + size * 0.05);
   // Thicken the pen line so strokes are two or three bulbs wide, like a real marquee.
   ctx.strokeStyle = "#000";
-  ctx.lineWidth = size * 0.03;
+  ctx.lineWidth = size * 0.018;
   ctx.lineJoin = "round";
   ctx.strokeText(TEXT, W / 2, H / 2 + size * 0.05);
   const data = ctx.getImageData(0, 0, W, H).data;
@@ -65,24 +65,23 @@ function layoutBulbs(font: string): Bulb[] {
   return bulbs;
 }
 
-/** One pre-rendered lit bulb: warm cream core, soft glow. */
+/** One pre-rendered bulb: a glossy black bead with a tiny highlight and soft shadow. */
 function bulbSprite(scale: number) {
   const r = BULB * scale;
-  const glow = r * 3.2;
+  const pad = r * 1.6;
   const s = document.createElement("canvas");
-  s.width = s.height = Math.ceil(glow * 2);
+  s.width = s.height = Math.ceil(pad * 2);
   const g = s.getContext("2d")!;
-  const c = glow;
-  const halo = g.createRadialGradient(c, c, 0, c, c, glow);
-  halo.addColorStop(0, "rgba(255, 214, 140, 0.55)");
-  halo.addColorStop(0.35, "rgba(255, 190, 110, 0.18)");
-  halo.addColorStop(1, "rgba(255, 170, 90, 0)");
-  g.fillStyle = halo;
+  const c = pad;
+  const shadow = g.createRadialGradient(c, c + r * 0.35, 0, c, c + r * 0.35, r * 1.5);
+  shadow.addColorStop(0, "rgba(0, 0, 0, 0.22)");
+  shadow.addColorStop(1, "rgba(0, 0, 0, 0)");
+  g.fillStyle = shadow;
   g.fillRect(0, 0, s.width, s.height);
-  const core = g.createRadialGradient(c - r * 0.3, c - r * 0.35, 0, c, c, r);
-  core.addColorStop(0, "#fffdf2");
-  core.addColorStop(0.55, "#fbe7b0");
-  core.addColorStop(1, "#e9c27a");
+  const core = g.createRadialGradient(c - r * 0.35, c - r * 0.4, 0, c, c, r);
+  core.addColorStop(0, "#6b6b70");
+  core.addColorStop(0.45, "#2a2a2e");
+  core.addColorStop(1, "#0d0d10");
   g.fillStyle = core;
   g.beginPath();
   g.arc(c, c, r, 0, Math.PI * 2);
@@ -114,8 +113,8 @@ export default function MarqueeTitle() {
       const draw = (now: number) => {
         const t = reduce ? Infinity : now - start;
         ctx.clearRect(0, 0, W, H);
-        // Unlit bulbs: dark glass dots, so the lettering is visible before it lights.
-        ctx.fillStyle = "rgba(255, 220, 170, 0.09)";
+        // Unlit bulbs: faint grey dots, so the lettering is visible before it fills in.
+        ctx.fillStyle = "rgba(40, 40, 50, 0.08)";
         for (const b of bulbs) {
           if (t - b.at >= BULB_MS) continue;
           ctx.beginPath();

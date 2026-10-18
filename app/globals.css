@@ -1025,23 +1025,7 @@ body.pip .widget-window .window-body {
   margin: 0;
 }
 
-/* A dark plum marquee board with the title in warm light bulbs. */
-.marquee-board {
-  position: relative;
-  padding: 10px 18px;
-  border-radius: 30px;
-  background:
-    radial-gradient(ellipse at 50% 0%, rgba(255, 255, 255, 0.12), transparent 55%),
-    radial-gradient(ellipse at 50% 60%, #3a1a33 0%, #241020 70%);
-  border: 1px solid #120610;
-  box-shadow:
-    0 14px 30px rgba(60, 20, 50, 0.35),
-    0 0 0 4px rgba(255, 255, 255, 0.75),
-    0 0 0 5px var(--chrome-lo),
-    inset 0 2px 0 rgba(255, 255, 255, 0.12),
-    inset 0 -6px 14px rgba(0, 0, 0, 0.4);
-}
-
+/* The marquee title sits straight on the page, no board. */
 .marquee-board canvas {
   display: block;
   width: 100%;
